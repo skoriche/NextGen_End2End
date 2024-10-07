@@ -580,7 +580,8 @@ def write_smp_input_files(catids, gdf_soil, smp_dir, coupled_models):
 # @param lasam_dir        : output directory (config files are written to this directory)
 # @param coupled_models : option needed to modify SMP config files based on the coupling type
 #############################################################################
-def write_lasam_input_files(catids, soil_param_file, gdf_soil, lasam_dir, coupled_models):
+def write_lasam_input_files(catids, soil_param_file, gdf_soil, lasam_dir, coupled_models,
+                            ngen_cal_type):
 
     sft_calib = "False" # update later (should be taken as an argument)
 
@@ -612,6 +613,9 @@ def write_lasam_input_files(catids, soil_param_file, gdf_soil, lasam_dir, couple
     if ( ("sft" in coupled_models) and (sft_calib in ["true", "True"]) ):
         lasam_params_base.append('calib_params=true')
 
+    if (ngen_cal_type in ['calibration', 'validation', 'restart']):
+        lasam_params_base.append('calib_params=true')
+
     soil_type_loc = lasam_params_base.index("layer_soil_type=")
     giuh_loc_id   = lasam_params_base.index("giuh_ordinates=")
     
@@ -628,6 +632,11 @@ def write_lasam_input_files(catids, soil_param_file, gdf_soil, lasam_dir, couple
         giuh_cat = pd.DataFrame(giuh_cat, columns=['v', 'frequency'])
 
         giuh_ordinates = ",".join(str(x) for x in np.array(giuh_cat["frequency"]))
+
+        any_nans = np.any(np.isnan(giuh_cat["frequency"]))
+        if (any_nans):
+            giuh_ordinates = str(1.0)
+
         lasam_params[giuh_loc_id] += giuh_ordinates
         
         fname_lasam = 'lasam_config_' + cat_name + '.txt'
@@ -1182,7 +1191,8 @@ def main():
         out=subprocess.call(str_sub,shell=True)
 
         write_lasam_input_files(catids, os.path.join(lasam_dir, "vG_params_stat_nom_ordered.dat"),
-                                gdf_soil, lasam_dir, args.models_option)
+                                gdf_soil, lasam_dir, args.models_option,
+                                ngen_cal_type = args.ncal)
 
 
     if (args.troute):
