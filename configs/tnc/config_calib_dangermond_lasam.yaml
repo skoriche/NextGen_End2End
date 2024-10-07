@@ -65,7 +65,6 @@ model:
     # Each catchment upstream of observable nexus gets its own permuted parameter space, evaluates at one observable nexus 
     strategy: uniform
     params:
-        # Note, this name MUST be the same as the realization model_type_name for the keys
         LGAR: *lgar_params
 
     eval_params:
