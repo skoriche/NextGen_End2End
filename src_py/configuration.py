@@ -987,7 +987,7 @@ def write_forcing_input_files(forcing_basefile, gpkg_file, forcing_time, forcing
         os.makedirs("data/forcing")
 
     if (forcing_format == '.csv'):
-        d['netcdf'] = "false"
+        d['netcdf'] = False
 
     with open(os.path.join(d["out_dir"],"config_forcing.yaml"), 'w') as file:
         yaml.dump(d,file, default_flow_style=False, sort_keys=False)
