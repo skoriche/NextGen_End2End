@@ -42,7 +42,7 @@ class Proxy:
         return hash(super().__getattribute__("_proxy_obj"))
 
 
-class ReadObservedData:
+class WellPlugin:
     def __init__(self):
         self.proxy = Proxy(pd.Series())
         self.ft3_to_m3 = 0.0283168
