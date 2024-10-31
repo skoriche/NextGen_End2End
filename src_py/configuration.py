@@ -888,10 +888,16 @@ def write_calib_input_files(gpkg_file, ngen_dir, output_dir, realization_file_pa
             }
         d['model']['val_params'] = val_params
 
+        #val_plugins = [
+        #        "ngen_cal_user_plugins.ngen_cal_save_iteration_output_plugin.SaveValidation",  
+        #        "ngen_cal_user_plugins.ngen_cal_read_obs_plugin.ReadObservedData"
+        #    ]
+
         val_plugins = [
-                "ngen_cal_user_plugins.ngen_cal_save_iteration_output_plugin.SaveValidation",  
-                "ngen_cal_user_plugins.ngen_cal_read_obs_plugin.ReadObservedData"
+            "ngen_cal_user_plugins.ngen_cal_save_iteration_output_plugin.SaveValidation",
+            "ngen_cal_user_plugins.ngen_cal_save_sim_obs_plugin.SaveValidation"
             ]
+
         try:
             d['general']['plugins'].update(val_plugins)
         except:
