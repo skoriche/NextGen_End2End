@@ -18,7 +18,7 @@ def runner(config_workflow, config_calib):
     
     if (args.gpkg):
         print ("Generating geopackages...")
-        generate_gpkg = f"Rscript {workflow_dir}/giuh_twi/main.R {config_workflow}"
+        generate_gpkg = f"Rscript {workflow_dir}/src_r/main.R {config_workflow}"
         status = subprocess.call(generate_gpkg,shell=True)
 
         if (status):

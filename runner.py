@@ -161,7 +161,7 @@ def run_ngen_with_calibration():
                                               restart_dir     = restart_dir,
                                               validation_time = validation_time)
 
-        run_command = f"python -m ngen.cal configs/calib_config.yaml"  
+        run_command = f"python -m ngen.cal configs/calib_config.yaml" # configs/calib_config.yaml is the file under cat_id/configs
         result = subprocess.call(run_command,shell=True)
 
 #####################################################################
