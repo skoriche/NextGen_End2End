@@ -160,9 +160,15 @@ def run_ngen_with_calibration():
                                               ngen_cal_type   = ngen_cal_type,
                                               restart_dir     = restart_dir,
                                               validation_time = validation_time)
+        if (ngen_cal_type  == 'calibration'):
+            run_command = f"python -m ngen.cal configs/ngen-cal_calib_config.yaml"
+            # .yaml file under cat_id/configs
+            result = subprocess.call(run_command,shell=True)
+        elif (ngen_cal_type  == 'validation'):
+            run_command = f"python {workflow_dir}/src_py/validation.py configs/ngen-cal_valid_config.yaml"
+            # .yaml file under cat_id/configs
+            result = subprocess.call(run_command,shell=True)
 
-        run_command = f"python -m ngen.cal configs/calib_config.yaml" # configs/calib_config.yaml is the file under cat_id/configs
-        result = subprocess.call(run_command,shell=True)
 
 #####################################################################
 def generate_partition_basin_file(ncats, gpkg_file):

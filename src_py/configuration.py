@@ -917,7 +917,13 @@ def write_calib_input_files(gpkg_file, ngen_dir, output_dir, realization_file_pa
                     if par['name'] in calib_params:
                         par['init'] = float(best_params_set[par['name']])
 
-    with open(os.path.join(conf_dir,"calib_config.yaml"), 'w') as file:
+    config_fname = ""
+    if (ngen_cal_type == 'calibration'):
+        config_fname = "ngen-cal_calib_config.yaml"
+    elif (ngen_cal_type == 'validation'):
+        config_fname = "ngen-cal_valid_config.yaml"
+
+    with open(os.path.join(conf_dir,config_fname), 'w') as file:
         yaml.dump(d,file, default_flow_style=False, sort_keys=False)
 
 
