@@ -33,9 +33,9 @@ simulation_time  = json.loads(dsim["simulation_time"])
 dcalib = d['ngen_cal']
 ngen_cal_type    = dcalib.get('task_type', None)
 
-validation_time = simulation_time
+validation_time = pd.NaT
 
-if (ngen_cal_type == 'validation'):
+if (ngen_cal_type == 'validation' or ngen_cal_type == 'calibvalid'):
     
     try:
         validation_time  = json.loads(dcalib["validation_time"])
@@ -136,7 +136,7 @@ def run_ngen_with_calibration():
 
         val_troute_output_file = ""
         val_start_time = start_time
-        if (ngen_cal_type  == 'validation'):
+        if (ngen_cal_type  == 'validation' or ngen_cal_type == 'calibvalid'):
             val_start_time = pd.Timestamp(validation_time['start_time']).strftime("%Y%m%d%H%M")
             val_troute_output_file = os.path.join("./troute_output_{}.nc".format(val_start_time))
 
@@ -149,20 +149,42 @@ def run_ngen_with_calibration():
         print ("Running basin %s on cores %s ********"%(id, nproc_local), flush = True)
         
 
-        configuration.write_calib_input_files(gpkg_file  = gpkg_file,
-                                              ngen_dir   = ngen_dir,
-                                              output_dir = o_dir,
-                                              realization_file_par = file_par,
-                                              ngen_cal_basefile = ngen_cal_basefile,
-                                              num_proc = nproc_local,
-                                              cal_troute_output_file = cal_troute_output_file,
-                                              val_troute_output_file = val_troute_output_file,
-                                              ngen_cal_type   = ngen_cal_type,
-                                              restart_dir     = restart_dir,
-                                              validation_time = validation_time)
+        # Calibration call
+        if (ngen_cal_type  == 'calibration' or ngen_cal_type == 'calibvalid'):
+            configuration.write_calib_input_files(gpkg_file  = gpkg_file,
+                                                  ngen_dir   = ngen_dir,
+                                                  output_dir = o_dir,
+                                                  realization_file_par = file_par,
+                                                  ngen_cal_basefile = ngen_cal_basefile,
+                                                  num_proc = nproc_local,
+                                                  cal_troute_output_file = cal_troute_output_file,
+                                                  val_troute_output_file = val_troute_output_file,
+                                                  ngen_cal_type   = 'calibration',
+                                                  restart_dir     = restart_dir,
+                                                  validation_time = validation_time)
 
-        run_command = f"python -m ngen.cal configs/calib_config.yaml" # configs/calib_config.yaml is the file under cat_id/configs
-        result = subprocess.call(run_command,shell=True)
+            run_command = f"python -m ngen.cal configs/ngen-cal_calib_config.yaml"
+            # .yaml file under cat_id/configs
+            result = subprocess.call(run_command,shell=True)
+
+        # Validation call
+        if (ngen_cal_type  == 'validation' or ngen_cal_type == 'calibvalid'):
+            configuration.write_calib_input_files(gpkg_file  = gpkg_file,
+                                                  ngen_dir   = ngen_dir,
+                                                  output_dir = o_dir,
+                                                  realization_file_par = file_par,
+                                                  ngen_cal_basefile = ngen_cal_basefile,
+                                                  num_proc = nproc_local,
+                                                  cal_troute_output_file = cal_troute_output_file,
+                                                  val_troute_output_file = val_troute_output_file,
+                                                  ngen_cal_type   = 'validation',
+                                                  restart_dir     = restart_dir,
+                                                  validation_time = validation_time)
+
+            run_command = f"python {workflow_dir}/src_py/validation.py configs/ngen-cal_valid_config.yaml"
+            # .yaml file under cat_id/configs
+            result = subprocess.call(run_command,shell=True)
+
 
 #####################################################################
 def generate_partition_basin_file(ncats, gpkg_file):
@@ -190,7 +212,7 @@ if __name__ == "__main__":
         sys.exit("Partitioning geopackage is requested but partitionGenerator does not exit! Quitting...")
 
 
-    if (not ngen_cal_type in ['calibration', 'validation', 'restart']):
+    if (not ngen_cal_type in ['calibration', 'validation', 'calibvalid', 'restart']):
         print ("Running NextGen without calibration ...")
         run_ngen_without_calibration()
     else:

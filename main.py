@@ -47,7 +47,7 @@ def runner(config_workflow, config_calib):
             print ("DONE \u2713")
         
     if (args.run):
-        print ("Calling Runner ...")
+        print ("Calling Runner...")
         
         with open(config_workflow, 'r') as file:
             d = yaml.safe_load(file)
