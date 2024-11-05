@@ -165,6 +165,7 @@ def main(general: General, model_conf: Mapping[str, Any]):
                 #print(f"{obs=}")
                 score = _objective_func(sim, obs, validation_parms.objective, (sim_start, sim_end))
                 print(f"validation run score: {score}")
+                agent_pm.hook.ngen_cal_model_iteration_finish(iteration = "validation", info = agent.job)
 
     # call `ngen_cal_finish` plugin hook functions
     except Exception as e:

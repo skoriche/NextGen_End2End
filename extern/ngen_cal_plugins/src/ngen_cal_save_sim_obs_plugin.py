@@ -8,15 +8,15 @@ import pandas as pd
 from pathlib import Path
 
 #from download_nwm_streamflow import
-ds_sim_test = pd.Series
-ds_obs_test = pd.Series
+#ds_sim_test = pd.Series
+#ds_obs_test = pd.Series
 _workdir: Path | None = None
 
 if typing.TYPE_CHECKING:
     from datetime import datetime
     from ngen.cal.meta import JobMeta
 
-class SaveCalibration:
+class SaveData:
     def __init__(self) -> None:
         self.sim: pd.Series | None = None
         self.obs: pd.Series | None = None
@@ -48,8 +48,8 @@ class SaveCalibration:
         assert isinstance(obs, pd.Series), f"expected pd.Series, got {type(obs)!r}"
         self.obs = obs
 
-        global ds_obs_test
-        ds_obs_test = obs
+        #global ds_obs_test
+        #ds_obs_test = obs
 
         return obs
 
@@ -101,7 +101,7 @@ class SaveCalibration:
         df.to_csv(f"{out_dir}/sim_obs_{iteration}.csv")
         
 
-
+"""
 class SaveValidation:
     def __init__(self) -> None:
         self.sim: pd.Series | None = None
@@ -152,3 +152,4 @@ class SaveValidation:
         if (not out_dir.is_dir()):
             Path.mkdir(out_dir)
         df.to_csv(f"{out_dir}/sim_obs_validation.csv")
+"""

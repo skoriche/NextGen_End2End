@@ -892,7 +892,7 @@ def write_calib_input_files(gpkg_file, ngen_dir, output_dir, realization_file_pa
         #        "ngen_cal_user_plugins.ngen_cal_save_iteration_output_plugin.SaveValidation",  
         #        "ngen_cal_user_plugins.ngen_cal_read_obs_plugin.ReadObservedData"
         #    ]
-
+        """
         val_plugins = [
             "ngen_cal_user_plugins.ngen_cal_save_iteration_output_plugin.SaveValidation",
             "ngen_cal_user_plugins.ngen_cal_save_sim_obs_plugin.SaveValidation"
@@ -902,7 +902,7 @@ def write_calib_input_files(gpkg_file, ngen_dir, output_dir, realization_file_pa
             d['general']['plugins'].update(val_plugins)
         except:
             d['general']['plugins'] = val_plugins
-
+        """
     elif (ngen_cal_type == 'restart'):
         df_par    = pd.read_parquet(os.path.join(restart_dir,"calib_param_df_state.parquet"))
         df_params = pd.read_csv(os.path.join(restart_dir,"best_params.txt"), header = None)
