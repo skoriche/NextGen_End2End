@@ -37,7 +37,7 @@ def save_output(sim_dir: Path, output_suffix: str):
 
 
 
-class SaveCalibration:
+class SaveData:
 
     @hookimpl
     def ngen_cal_model_configure(self, config: ModelExec) -> None:
@@ -56,6 +56,7 @@ class SaveCalibration:
 
         save_output(path, str(iteration))
 
+"""
 class SaveValidation:
     def __init__(self) -> None:
         self.sim: pd.Series | None = None
@@ -72,16 +73,4 @@ class SaveValidation:
         assert _workdir is not None, "invariant"
 
         save_output(_workdir, "validation")
-
 """
-class SaveIterationRealizationPlugin:
-    save_dir = Path("/some/dir/ngen_cal_output")
-
-    @hookimpl
-    def ngen_cal_model_iteration_finish(self, iteration: int, info: JobMeta):
-        workdir: Path = info.workdir
-        realization = workdir / "realization.json"
-        output = self.save_dir / f"realization_{iteration}.json"
-        shutil.copy(realization, output)
-"""
-
