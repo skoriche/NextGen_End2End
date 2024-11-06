@@ -65,3 +65,4 @@ model:
     plugins:
       - "ngen_cal_user_plugins.ngen_cal_save_subcat_output_plugin.SaveData" # saves cat_*.csv or nex-*.csv to "output_iteration" directory
       - "ngen_cal_user_plugins.ngen_cal_save_sim_obs_plugin.SaveData"          # saves simulated and observed discharge at the outlet
+      - "ngen_cal_user_plugins.metrics.ComputeMetrics"
