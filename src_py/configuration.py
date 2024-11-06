@@ -805,8 +805,9 @@ def write_troute_input_files(gpkg_file, routing_file, troute_dir, simulation_tim
 # @param real_file      : realization file
 #############################################################################
 def write_calib_input_files(gpkg_file, ngen_dir, output_dir, realization_file_par,
-                            cal_troute_output_file, val_troute_output_file, ngen_cal_basefile,
-                            ngen_cal_type, restart_dir, validation_time, num_proc):
+                            troute_output_file, ngen_cal_basefile,
+                            ngen_cal_type, restart_dir, simulation_time, evaluation_time,
+                            num_proc):
 
     conf_dir = os.path.join(output_dir,"configs")
 
@@ -832,7 +833,7 @@ def write_calib_input_files(gpkg_file, ngen_dir, output_dir, realization_file_pa
     d['model']['hydrofabric'] = gpkg_file.as_posix()
 
     #d['model']['routing_output'] = f'./flowveldepth_{gpkg_name}.csv' # this gpkg_name should be consistent with title_string in troute
-    d['model']['routing_output'] = cal_troute_output_file # if in the outputs/troute directory
+    d['model']['routing_output'] = troute_output_file # if in the outputs/troute directory
 
 
     gage_id = get_flowpath_attributes(gpkg_file, gage_id=True)
@@ -868,11 +869,23 @@ def write_calib_input_files(gpkg_file, ngen_dir, output_dir, realization_file_pa
         d['model']['binary'] = f'PYTHONEXECUTABLE=$(which python) ' + os.path.join(ngen_dir, "cmake_build/ngen")
     else:
         d['model']['binary'] = os.path.join(ngen_dir, "cmake_build/ngen")
-    
+
+    if (ngen_cal_type == 'calibration'):
+        
+        val_params = {
+            #'sim_start': simulation_time['start_time'],
+            'evaluation_start': evaluation_time['start_time'],
+            'evaluation_stop' : evaluation_time['end_time']
+            }
+
+        
+        d['model']['eval_params'].update(val_params)
+        
+
     if (ngen_cal_type == 'validation'):
         val_troute_output = {
             'ngen_cal_troute_output': {
-                'validation_routing_output': val_troute_output_file
+                'validation_routing_output': troute_output_file
             }
         }
 
@@ -882,8 +895,9 @@ def write_calib_input_files(gpkg_file, ngen_dir, output_dir, realization_file_pa
             d['model']['plugin_settings'] = val_troute_output
 
         val_params = {
-            'evaluation_start': validation_time['start_time'],
-            'evaluation_stop' : validation_time['end_time'],
+            'sim_start': simulation_time['start_time'],
+            'evaluation_start': evaluation_time['start_time'],
+            'evaluation_stop' : evaluation_time['end_time'],
             'objective' : "kling_gupta"
             }
         d['model']['val_params'] = val_params

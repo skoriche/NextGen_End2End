@@ -20,27 +20,30 @@ ngen_cal_basefile = sys.argv[2]
 with open(workflow_infile, 'r') as file:
     d = yaml.safe_load(file)
 
-dsim = d['simulations']
 workflow_dir     = d["workflow_dir"]
 input_dir        = d["input_dir"]
 output_dir       = Path(d["output_dir"])
-ngen_dir         = dsim["ngen_dir"]
-nproc            = int(dsim.get('num_processors_sim', 1))
-nproc_adaptive   = int(dsim.get('num_processors_adaptive', True))
-simulation_time  = json.loads(dsim["simulation_time"])
+
+
+dformul = d['formulation']
+ngen_dir         = dformul["ngen_dir"]
+nproc            = int(dformul.get('num_processors_sim', 1))
+nproc_adaptive   = int(dformul.get('num_processors_adaptive', True))
 
 
 dcalib = d['ngen_cal']
 ngen_cal_type    = dcalib.get('task_type', None)
+#simulation_time  = json.loads(ddformul["simulation_time"])
+calibration_time = pd.NaT
+validation_time  = pd.NaT
 
-validation_time = pd.NaT
+if (ngen_cal_type == 'calibration' or ngen_cal_type == 'calibvalid'):
+    calibration_time  = json.loads(dcalib["calibration_time"])
+    calib_eval_time  = json.loads(dcalib["calib_eval_time"])
 
 if (ngen_cal_type == 'validation' or ngen_cal_type == 'calibvalid'):
-    
-    try:
-        validation_time  = json.loads(dcalib["validation_time"])
-    except:
-        pass
+    validation_time  = json.loads(dcalib["validation_time"])
+    valid_eval_time  = json.loads(dcalib["valid_eval_time"])
 
 restart_dir = "./"
 if (ngen_cal_type == 'restart'):
@@ -128,17 +131,9 @@ def run_ngen_with_calibration():
 
         nproc_local = nproc
 
-        start_time = pd.Timestamp(simulation_time['start_time']).strftime("%Y%m%d%H%M")
         
-        #troute_output_file = os.path.join(dir, "outputs/troute", "troute_output_{}.csv".format(start_time))
-        #troute_output_file = os.path.join(dir, "outputs/troute", "flowveldepth_{}.csv".format(gpkg_name))
-        cal_troute_output_file = os.path.join("./troute_output_{}.nc".format(start_time))
 
-        val_troute_output_file = ""
-        val_start_time = start_time
-        if (ngen_cal_type  == 'validation' or ngen_cal_type == 'calibvalid'):
-            val_start_time = pd.Timestamp(validation_time['start_time']).strftime("%Y%m%d%H%M")
-            val_troute_output_file = os.path.join("./troute_output_{}.nc".format(val_start_time))
+        
 
 
         file_par = ""
@@ -151,17 +146,23 @@ def run_ngen_with_calibration():
 
         # Calibration call
         if (ngen_cal_type  == 'calibration' or ngen_cal_type == 'calibvalid'):
-            configuration.write_calib_input_files(gpkg_file  = gpkg_file,
-                                                  ngen_dir   = ngen_dir,
-                                                  output_dir = o_dir,
+            start_time = pd.Timestamp(calibration_time['start_time']).strftime("%Y%m%d%H%M")
+        
+            #troute_output_file = os.path.join(dir, "outputs/troute", "troute_output_{}.csv".format(start_time))
+            #troute_output_file = os.path.join(dir, "outputs/troute", "flowveldepth_{}.csv".format(gpkg_name))
+            troute_output_file = os.path.join("./troute_output_{}.nc".format(start_time))
+            
+            configuration.write_calib_input_files(gpkg_file            = gpkg_file,
+                                                  ngen_dir             = ngen_dir,
+                                                  output_dir           = o_dir,
                                                   realization_file_par = file_par,
-                                                  ngen_cal_basefile = ngen_cal_basefile,
-                                                  num_proc = nproc_local,
-                                                  cal_troute_output_file = cal_troute_output_file,
-                                                  val_troute_output_file = val_troute_output_file,
-                                                  ngen_cal_type   = 'calibration',
-                                                  restart_dir     = restart_dir,
-                                                  validation_time = validation_time)
+                                                  ngen_cal_basefile    = ngen_cal_basefile,
+                                                  troute_output_file   = troute_output_file,
+                                                  ngen_cal_type        = 'calibration',
+                                                  restart_dir          = restart_dir,
+                                                  simulation_time      = calibration_time,
+                                                  evaluation_time      = calib_eval_time,
+                                                  num_proc             = nproc_local)
 
             run_command = f"python -m ngen.cal configs/ngen-cal_calib_config.yaml"
             # .yaml file under cat_id/configs
@@ -169,17 +170,21 @@ def run_ngen_with_calibration():
 
         # Validation call
         if (ngen_cal_type  == 'validation' or ngen_cal_type == 'calibvalid'):
-            configuration.write_calib_input_files(gpkg_file  = gpkg_file,
-                                                  ngen_dir   = ngen_dir,
-                                                  output_dir = o_dir,
+
+            start_time = pd.Timestamp(validation_time['start_time']).strftime("%Y%m%d%H%M")
+            troute_output_file = os.path.join("./troute_output_{}.nc".format(start_time))
+            
+            configuration.write_calib_input_files(gpkg_file            = gpkg_file,
+                                                  ngen_dir             = ngen_dir,
+                                                  output_dir           = o_dir,
                                                   realization_file_par = file_par,
-                                                  ngen_cal_basefile = ngen_cal_basefile,
-                                                  num_proc = nproc_local,
-                                                  cal_troute_output_file = cal_troute_output_file,
-                                                  val_troute_output_file = val_troute_output_file,
-                                                  ngen_cal_type   = 'validation',
-                                                  restart_dir     = restart_dir,
-                                                  validation_time = validation_time)
+                                                  ngen_cal_basefile    = ngen_cal_basefile,
+                                                  troute_output_file   = troute_output_file,
+                                                  ngen_cal_type        = 'validation',
+                                                  restart_dir          = restart_dir,
+                                                  simulation_time      = validation_time,
+                                                  evaluation_time      = valid_eval_time,
+                                                  num_proc             = nproc_local)
 
             run_command = f"python {workflow_dir}/src_py/validation.py configs/ngen-cal_valid_config.yaml"
             # .yaml file under cat_id/configs
