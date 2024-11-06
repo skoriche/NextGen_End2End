@@ -88,36 +88,43 @@ infile  = sys.argv[1]
 with open(infile, 'r') as file:
     d = yaml.safe_load(file)
 
-dsim = d['simulations']
 workflow_dir               = d["workflow_dir"]
 input_dir                  = d["input_dir"]
 output_dir                 = Path(d["output_dir"])
-ngen_dir                   = dsim["ngen_dir"]
-simulation_time            = dsim["simulation_time"]
-model_option               = dsim['model_option']
-precip_partitioning_scheme = dsim['precip_partitioning_scheme']
-surface_runoff_scheme      = dsim['surface_runoff_scheme']
-clean                      = dsim.get('clean', "none")
-is_routing                 = dsim.get('is_routing', False)
-verbosity                  = dsim.get('verbosity', 0)
-num_processors_config      = dsim.get('num_processors_config', 1)
-num_processors_sim         = dsim.get('num_processors_sim', 1)
-setup_simulation           = dsim.get('setup_simulation', True)
-rename_existing_simulation = dsim.get('rename_existing_simulation', "")
-schema_type                = dsim.get('schema_type', "noaa-owp")
+
+dformul = d['formulation']
+ngen_dir                   = dformul["ngen_dir"]
+model_option               = dformul['models']
+precip_partitioning_scheme = dformul['precip_partitioning_scheme']
+surface_runoff_scheme      = dformul['surface_runoff_scheme']
+clean                      = dformul.get('clean', "none")
+is_routing                 = dformul.get('is_routing', False)
+verbosity                  = dformul.get('verbosity', 0)
+num_processors_config      = dformul.get('num_processors_config', 1)
+num_processors_sim         = dformul.get('num_processors_sim', 1)
+setup_simulation           = dformul.get('setup_simulation', True)
+rename_existing_simulation = dformul.get('rename_existing_simulation', "")
+schema_type                = dformul.get('schema_type', "noaa-owp")
 
 
 dforcing = d['forcings']
 forcing_dir      = dforcing.get("forcing_dir", "")
 forcing_format   = dforcing.get('forcing_format', '.nc')
-forcing_source   = dsim.get('forcing_source', "")
+#forcing_source   = dsim.get('forcing_source', "")
 
 is_netcdf_forcing = True
 if (forcing_format == '.csv'):
     is_netcdf_forcing = False
 
 dcalib = d['ngen_cal']
-ngen_cal_type = dcalib.get('task_type', None)
+ngen_cal_type   = dcalib.get('task_type', None)
+#simulation_time = dformul["simulation_time"]
+if (ngen_cal_type == 'calibration' or ngen_cal_type == 'calibvalid'):
+    simulation_time  = dcalib["calibration_time"]
+    calib_eval_time  = dcalib["calib_eval_time"]
+
+print ("sim time: ", simulation_time)
+
 
 output_dir.mkdir(parents=True, exist_ok=True)
 
