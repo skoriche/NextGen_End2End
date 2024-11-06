@@ -18,12 +18,13 @@ infile  = sys.argv[1]
 with open(infile, 'r') as file:
     d = yaml.safe_load(file)
 
-dsim = d['simulations']
 workflow_dir        = d["workflow_dir"]
 input_dir           = d["input_dir"]
 output_dir          = Path(d["output_dir"])
+
+dsim = d['formulation']
 verbosity           = dsim.get('verbosity', 0)
-num_processors_forcing  = 1
+num_processors_forcing  = dsim.get("num_processors", 1)
 
 dforcing = d['forcings']
 forcing_dir      = dforcing.get("forcing_dir", "")
