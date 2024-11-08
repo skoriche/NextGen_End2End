@@ -765,7 +765,7 @@ def write_troute_input_files(gpkg_file, routing_file, troute_dir, simulation_tim
     d['compute_parameters']['restart_parameters']['start_datetime'] = start_time.strftime("%Y-%m-%d_%H:%M:%S")
     
 
-    if (ngen_cal_type in ['calibration', 'validation', 'restart']):
+    if (ngen_cal_type in ['calibration', 'validation', 'calibvalid', 'restart']):
         d['compute_parameters']['forcing_parameters']['qlat_input_folder'] =  "./"
     else:
         d['compute_parameters']['forcing_parameters']['qlat_input_folder'] =  os.path.join(sim_output_dir,"div")
@@ -778,7 +778,7 @@ def write_troute_input_files(gpkg_file, routing_file, troute_dir, simulation_tim
 
     d['compute_parameters']['cpu_pool'] = 10
 
-    if (ngen_cal_type in ['calibration', 'validation', 'restart']):
+    if (ngen_cal_type in ['calibration', 'validation', 'calibvalid', 'restart']):
         stream_output = {
             #"csv_output" : {
             #    "csv_output_folder" : "./"
@@ -1198,14 +1198,6 @@ def main():
     if (args.troute):
         write_troute_input_files(args.gpkg_file, args.routfile, args.output_dir, args.time,
                                  sim_output_dir = args.sim_output_dir, ngen_cal_type = args.ncal)
-
-    #if (args.calib):
-    #    real_file = os.path.join(args.json_dir, "realization_%s.json"%args.models_option)
-    #    write_calib_input_files(args.gpkg_file, args.ngen_dir, args.output_dir, real_file)
-    
-    ## create uniform forcings
-    #forcing_file = os.path.join(args.forcing_dir,"cat-base.csv")
-    #write_forcing_files(catids, forcing_file)
     
 
 if __name__ == "__main__":

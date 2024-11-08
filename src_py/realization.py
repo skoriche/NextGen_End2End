@@ -528,7 +528,7 @@ def write_realization_file(ngen_dir, forcing_dir, config_dir, realization_file,
     }
 
 
-    if (not ngen_cal_type in ['calibration', 'validation', 'restart']):
+    if (not ngen_cal_type in ['calibration', 'validation', 'calibvalid', 'restart']):
         root["output_root"] = os.path.join(sim_output_dir, "div")
 
     # Update the forcing block if the forcings are in netcdf format

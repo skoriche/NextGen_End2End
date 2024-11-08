@@ -110,7 +110,6 @@ schema_type                = dformul.get('schema_type', "noaa-owp")
 dforcing = d['forcings']
 forcing_dir      = dforcing.get("forcing_dir", "")
 forcing_format   = dforcing.get('forcing_format', '.nc')
-#forcing_source   = dsim.get('forcing_source', "")
 
 is_netcdf_forcing = True
 if (forcing_format == '.csv'):
@@ -119,11 +118,11 @@ if (forcing_format == '.csv'):
 dcalib = d['ngen_cal']
 ngen_cal_type   = dcalib.get('task_type', None)
 #simulation_time = dformul["simulation_time"]
+
 if (ngen_cal_type == 'calibration' or ngen_cal_type == 'calibvalid'):
     simulation_time  = dcalib["calibration_time"]
     calib_eval_time  = dcalib["calib_eval_time"]
 
-print ("sim time: ", simulation_time)
 
 
 output_dir.mkdir(parents=True, exist_ok=True)
