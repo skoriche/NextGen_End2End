@@ -23,13 +23,13 @@ class Proxy:
     def __init__(self, obj):
         self._proxy_obj = obj
         self._proxy_obj_sim = obj
-        
+
     def set_proxy(self, obj):
         self._proxy_obj = obj
 
     def set_proxy_sim(self, obj):
         self._proxy_obj_sim = obj
-        
+
     def __getattribute__(self, name: str):
         if name not in ("_proxy_obj", "set_proxy", "_proxy_obj_sim", "set_proxy_sim"):
             return getattr(super().__getattribute__("_proxy_obj"), name)
@@ -59,7 +59,7 @@ class WellPlugin:
         global _workdir
         # HACK: fix this in future
         _workdir = path
-        
+
         self.obs_data_path = config.plugin_settings["ngen_cal_read_obs_data"]["obs_data_path"]
         self.units = config.plugin_settings["ngen_cal_read_obs_data"]["units"]
         self.window = int(config.plugin_settings["ngen_cal_read_obs_data"]["window"])
@@ -86,6 +86,10 @@ class WellPlugin:
 
         tname = 'value_date'
         names = [name for name in df.columns if 'cat-' in name or tname in name]
+
+        names = [name for name in names if 'cat-30' not in name and 'cat-73'  not in name]
+        #names = [name for name in names if 'cat-30' not in name]
+
         df = df[names]
 
         self.cat_names = [n.split('_')[-1] for n in names if 'cat' in n]
@@ -94,12 +98,12 @@ class WellPlugin:
             df.columns = self.cat_names
             df[tname] = pd.to_datetime(df.index.tz_localize(None))
             df.set_index(tname, inplace=True)
+            df.update(df.cumsum())
         else:
             df.columns = [df.columns[0]] + self.cat_names
             df[tname] = pd.to_datetime(df[tname])
             df.set_index(tname, inplace=True)
 
-        
         #if self.units == "m/hr":
         #    df["value"] =  df["value"]
 
@@ -121,7 +125,7 @@ class WellPlugin:
         #self.cat_names = [name.split('_')[-1] for name in names if 'cat' in name]
 
         return ds
-    
+
     @hookimpl
     def ngen_cal_model_observations(
         self,
@@ -140,8 +144,7 @@ class WellPlugin:
         # `ngen_cal_model_observations` must have already called, so call again and set proxy
         if not self.proxy.empty:
             assert self.obs_data_path is not None, "invariant"
-            
-            
+
             ds = self._read_observations(self,
                                          self.obs_data_path,
                                          start_time,
@@ -149,7 +152,7 @@ class WellPlugin:
                                          self.window
                                          )
 
-            self.proxy.set_proxy(ds)        
+            self.proxy.set_proxy(ds)
 
         return self.proxy
 
@@ -171,7 +174,7 @@ class WellPlugin:
 
         df_sim = []
         tname = 'value_date'
-        
+
         for file in calib_cats:
             df = pd.read_csv(file, usecols=['Time','SOIL_TO_GW_FLUX', 'DEEP_GW_TO_CHANNEL_FLUX'], index_col=False)
             df['SOIL_TO_GW_FLUX'] = df['SOIL_TO_GW_FLUX'] - df['DEEP_GW_TO_CHANNEL_FLUX']
@@ -179,16 +182,16 @@ class WellPlugin:
             df.rename(columns={'Time' : tname, 'SOIL_TO_GW_FLUX': Path(file).stem}, inplace=True)
             df[tname] = pd.to_datetime(df[tname])
             df.set_index(tname, inplace=True)
+            df.update(df.cumsum())
             df_sim.append(df)
 
-        
         df_sim = pd.concat(df_sim, axis=1)
         ds = df_sim.stack()
         ds.rename("sim_flow", inplace=True)
         #pd.set_option('display.float_format', '{:.10f}'.format)
 
         self.proxy.set_proxy_sim(ds)
-        
+
         return ds
 
     @hookimpl
@@ -212,7 +215,7 @@ class WellPlugin:
             df = pd.merge(sim, obs, left_index=True, right_index=True)
         else:
             df = pd.DataFrame(sim)
-       
+
         df = df.unstack()
 
         df.reset_index(names="time", inplace=True)
@@ -224,15 +227,15 @@ class WellPlugin:
         if (not out_dir.is_dir()):
             Path.mkdir(out_dir)
         df.to_csv(f"{out_dir}/sim_obs_{iteration}.csv")
-        
+
     @hookimpl
     def ngen_cal_finish(exception: Exception | None) -> None:
-        
+
         if exception is None:
             print("validation: not saving obs/sim output")
             return
         global _workdir
-        
+
         assert _workdir is not None, "invariant"
 
         if (len(ds_sim_test.index) == len(ds_obs_test.index)):
@@ -241,7 +244,7 @@ class WellPlugin:
             df = pd.DataFrame(ds_sim_test)
 
         df = df.unstack()
-        
+
         df.rename(columns = {"value_time" : "time"}, inplace=True)
 
         df.reset_index(names="time", inplace=True)
@@ -254,18 +257,22 @@ class WellPlugin:
 
 
 def kling_gupta_well(df_observed, df_simulated):
-   
+
     cats = df_observed.index.levels[1] # get all cat-ids
 
     kge = 0.0
-    for cat in cats:
-        m1 = df_simulated[:,cat].mean()
-        val = 1000.0
-        
-        if ( not (df_observed[:,cat] == 0.0).all() and not (df_simulated[:,cat] == 0.0).all()):
-            val = 1 - kling_gupta_efficiency(df_observed[:,cat], df_simulated[:,cat])
 
-        kge = kge + val
+    count = 0
+    for cat in cats:
+
+        if ( not (df_observed[:,cat] == 0.0).all() and not (df_simulated[:,cat] == 0.0).all()):
+            kge = kge + kling_gupta_efficiency(df_observed[:,cat], df_simulated[:,cat])
+            count = count + 1
+
+    if (count == 0):
+        kge = 1000.0
+    else:
+        kge = 1 - kge/count
 
     return kge
 
