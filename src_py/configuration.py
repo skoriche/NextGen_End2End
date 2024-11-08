@@ -328,7 +328,7 @@ def write_cfe_input_files(catids, precip_partitioning_scheme, surface_runoff_sch
                       'max_gw_storage=' + str(gdf_soil['max_gw_storage'][cat_name])+'[m]',
                       'Cgw=' + str(gdf_soil['Cgw'][cat_name])+'[m h-1]',
                       'expon=' + str(gdf_soil['gw_expon'][cat_name])+'[]',
-                      'gw_storage=0.05[m/m]',
+                      'gw_storage=0.5[m/m]',
                       'alpha_fc=0.33',
                       'soil_storage=' + str(gdf_soil['soil_smcmax'][cat_name])+'[m/m]', # 50% reservoir filled
                       'K_nash_subsurface=0.03[]',
