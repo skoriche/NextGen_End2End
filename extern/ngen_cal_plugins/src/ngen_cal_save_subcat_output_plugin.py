@@ -35,9 +35,33 @@ def save_output(sim_dir: Path, output_suffix: str):
     for f in itertools.chain(*globs):
         f.rename(out_dir / f.name)
 
+def clean_output(sim_dir: Path):
+    runoff_pattern = "cat-*.csv"
+    lateral_pattern = "nex-*.csv"
+    terminal_pattern = "tnx-*.csv"
+    coastal_pattern = "cnx-*.csv"
+    routing_output_stream = "troute_output_*"
+    routing_csv_output = "flowveldepth_*.csv"
+    ngen_json = "realization*.json"
+
+    globs = [
+        sim_dir.glob(runoff_pattern),
+        sim_dir.glob(lateral_pattern),
+        sim_dir.glob(terminal_pattern),
+        sim_dir.glob(coastal_pattern),
+        sim_dir.glob(routing_output_stream),
+        sim_dir.glob(routing_csv_output),
+        sim_dir.glob(ngen_json),
+    ]
+
+    for f in itertools.chain(*globs):
+        f.unlink()
+
 
 
 class SaveData:
+    def __init__(self):
+        self.kge_best = -1
 
     @hookimpl
     def ngen_cal_model_configure(self, config: ModelExec) -> None:
@@ -53,8 +77,25 @@ class SaveData:
         evaluation and inspection.
         """
         path = info.workdir
+        try:
+            with open(path / 'best_params.txt', 'r') as file:
+                dat = file.readlines()
+        except:
+            save_output(path, str(iteration))
+            return
 
-        save_output(path, str(iteration))
+        iter_kge = float(dat[2].strip())
+
+        if (self.kge_best < 0):
+            self.kge_best = iter_kge
+            save_output(path, 'best')
+        elif (iter_kge < self.kge_best):
+            self.kge_best = iter_kge
+            save_output(path, 'best')
+        else:
+            clean_output(path)
+
+        #save_output(path, str(iteration))
 
 """
 class SaveValidation:

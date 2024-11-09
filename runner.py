@@ -8,6 +8,7 @@ import pandas as pd
 import subprocess
 import glob
 import yaml
+import multiprocessing
 import platform
 from src_py import configuration
 import json
@@ -26,14 +27,14 @@ output_dir       = Path(d["output_dir"])
 
 
 dformul = d['formulation']
-ngen_dir         = dformul["ngen_dir"]
-nproc            = int(dformul.get('num_processors_sim', 1))
-nproc_adaptive   = int(dformul.get('num_processors_adaptive', True))
+ngen_dir        = dformul["ngen_dir"]
+np_per_basin    = int(dformul.get('np_per_basin', 1))
+basins_in_par   = int(dformul.get('basins_in_par', 1))
+np_per_basin_adaptive  = int(dformul.get('np_per_basin_adaptive', True))
 
 
 dcalib = d['ngen_cal']
 ngen_cal_type    = dcalib.get('task_type', None)
-#simulation_time  = json.loads(ddformul["simulation_time"])
 calibration_time = pd.NaT
 validation_time  = pd.NaT
 
@@ -82,13 +83,13 @@ def run_ngen_without_calibration():
         gpkg_file = Path(glob.glob(str(i_dir / "data" / "*.gpkg"))[0])
         gpkg_name = gpkg_file.stem
 
-        nproc_local = nproc
+        np_per_basin_local = np_per_basin
 
         file_par = ""
-        if (nproc_local > 1):
-            nproc_local, file_par = generate_partition_basin_file(ncats, gpkg_file)
+        if (np_per_basin_local > 1):
+            np_per_basin_local, file_par = generate_partition_basin_file(ncats, gpkg_file)
         
-        print ("Running basin %s on cores %s ********"%(id, nproc_local), flush = True)
+        print ("Running basin %s on cores %s ********"%(id, np_per_basin_local), flush = True)
         
         realization = glob.glob("json/realization_*.json")
 
@@ -96,10 +97,10 @@ def run_ngen_without_calibration():
 
         realization = realization[0]
         
-        if (nproc_local == 1):
+        if (np_per_basin_local == 1):
             run_cmd = f'{ngen_exe} {gpkg_file} all {gpkg_file} all {realization}'
         else:
-            run_cmd = f'mpirun -np {nproc_local} {ngen_exe} {gpkg_file} all {gpkg_file} all {realization} {file_par}'
+            run_cmd = f'mpirun -np {np_per_basin_local} {ngen_exe} {gpkg_file} all {gpkg_file} all {realization} {file_par}'
 
         if os_name == "Darwin":
             run_cmd = f'PYTHONEXECUTABLE=$(which python) {run_cmd}'
@@ -107,113 +108,122 @@ def run_ngen_without_calibration():
         print (f"Run command: {run_cmd} ", flush = True)
         result = subprocess.call(run_cmd,shell=True)
 
-    
-def run_ngen_with_calibration():
+
+def run_ngen_with_calibration(basin):
 
     infile = os.path.join(output_dir, "basins_passed.csv")
     indata = pd.read_csv(infile, dtype=str)
-   
-    for id, ncats in zip(indata["basin_id"], indata['n_cats']):
 
-        ncats = int(ncats)
-
-        o_dir = output_dir / id
-        i_dir = Path(input_dir) / id
-
-        os.chdir(o_dir)
-        print ("cwd: ", os.getcwd())
-        print ("input_dir: ", i_dir)
-        print ("output_dir: ", o_dir)
+    id = basin[0]
+    ncats = int(basin[1])
 
 
-        gpkg_file = Path(glob.glob(str(i_dir / "data" / "*.gpkg"))[0])
-        gpkg_name = gpkg_file.stem
+    o_dir = output_dir / id
+    i_dir = Path(input_dir) / id
 
-        nproc_local = nproc
+    os.chdir(o_dir)
+    print ("cwd: ", os.getcwd())
+    print ("input_dir: ", i_dir)
+    print ("output_dir: ", o_dir)
 
+
+    gpkg_file = Path(glob.glob(str(i_dir / "data" / "*.gpkg"))[0])
+    gpkg_name = gpkg_file.stem
+    
+    np_per_basin_local = np_per_basin
+    
+    file_par = ""
+    if (np_per_basin_local > 1):
+        np_per_basin_local, file_par = generate_partition_basin_file(ncats, gpkg_file)
+        file_par = os.path.join(o_dir, file_par)
+        
+    print ("Running basin %s on cores %s ********"%(id, np_per_basin_local), flush = True)
         
 
+    # Calibration call
+    if (ngen_cal_type  == 'calibration' or ngen_cal_type == 'calibvalid'):
+        start_time = pd.Timestamp(calibration_time['start_time']).strftime("%Y%m%d%H%M")
         
-
-
-        file_par = ""
-        if (nproc_local > 1):
-            nproc_local, file_par = generate_partition_basin_file(ncats, gpkg_file)
-            file_par = os.path.join(o_dir, file_par)
-
-        print ("Running basin %s on cores %s ********"%(id, nproc_local), flush = True)
-        
-
-        # Calibration call
-        if (ngen_cal_type  == 'calibration' or ngen_cal_type == 'calibvalid'):
-            start_time = pd.Timestamp(calibration_time['start_time']).strftime("%Y%m%d%H%M")
-        
-            #troute_output_file = os.path.join(dir, "outputs/troute", "troute_output_{}.csv".format(start_time))
-            #troute_output_file = os.path.join(dir, "outputs/troute", "flowveldepth_{}.csv".format(gpkg_name))
-            troute_output_file = os.path.join("./troute_output_{}.nc".format(start_time))
+        #troute_output_file = os.path.join(dir, "outputs/troute", "troute_output_{}.csv".format(start_time))
+        #troute_output_file = os.path.join(dir, "outputs/troute", "flowveldepth_{}.csv".format(gpkg_name))
+        troute_output_file = os.path.join("./troute_output_{}.nc".format(start_time))
             
-            configuration.write_calib_input_files(gpkg_file            = gpkg_file,
-                                                  ngen_dir             = ngen_dir,
-                                                  output_dir           = o_dir,
-                                                  realization_file_par = file_par,
-                                                  ngen_cal_basefile    = ngen_cal_basefile,
-                                                  troute_output_file   = troute_output_file,
-                                                  ngen_cal_type        = 'calibration',
-                                                  restart_dir          = restart_dir,
-                                                  simulation_time      = calibration_time,
-                                                  evaluation_time      = calib_eval_time,
-                                                  num_proc             = nproc_local)
+        configuration.write_calib_input_files(gpkg_file            = gpkg_file,
+                                              ngen_dir             = ngen_dir,
+                                              output_dir           = o_dir,
+                                              realization_file_par = file_par,
+                                              ngen_cal_basefile    = ngen_cal_basefile,
+                                              troute_output_file   = troute_output_file,
+                                              ngen_cal_type        = 'calibration',
+                                              restart_dir          = restart_dir,
+                                              simulation_time      = calibration_time,
+                                              evaluation_time      = calib_eval_time,
+                                              num_proc             = np_per_basin_local)
 
-            run_command = f"python -m ngen.cal configs/ngen-cal_calib_config.yaml"
-            # .yaml file under cat_id/configs
-            result = subprocess.call(run_command,shell=True)
+        run_command = f"python -m ngen.cal configs/ngen-cal_calib_config.yaml"
+        # .yaml file under cat_id/configs
+        result = subprocess.call(run_command,shell=True)
 
-        # Validation call
-        if (ngen_cal_type  == 'validation' or ngen_cal_type == 'calibvalid'):
+    # Validation call
+    if (ngen_cal_type  == 'validation' or ngen_cal_type == 'calibvalid'):
+        
+        start_time = pd.Timestamp(validation_time['start_time']).strftime("%Y%m%d%H%M")
+        troute_output_file = os.path.join("./troute_output_{}.nc".format(start_time))
+        
+        configuration.write_calib_input_files(gpkg_file            = gpkg_file,
+                                              ngen_dir             = ngen_dir,
+                                              output_dir           = o_dir,
+                                              realization_file_par = file_par,
+                                              ngen_cal_basefile    = ngen_cal_basefile,
+                                              troute_output_file   = troute_output_file,
+                                              ngen_cal_type        = 'validation',
+                                              restart_dir          = restart_dir,
+                                              simulation_time      = validation_time,
+                                              evaluation_time      = valid_eval_time,
+                                              num_proc             = np_per_basin_local)
+        
+        run_command = f"python {workflow_dir}/src_py/validation.py configs/ngen-cal_valid_config.yaml"
+        # .yaml file under cat_id/configs
+        result = subprocess.call(run_command,shell=True)
 
-            start_time = pd.Timestamp(validation_time['start_time']).strftime("%Y%m%d%H%M")
-            troute_output_file = os.path.join("./troute_output_{}.nc".format(start_time))
-            
-            configuration.write_calib_input_files(gpkg_file            = gpkg_file,
-                                                  ngen_dir             = ngen_dir,
-                                                  output_dir           = o_dir,
-                                                  realization_file_par = file_par,
-                                                  ngen_cal_basefile    = ngen_cal_basefile,
-                                                  troute_output_file   = troute_output_file,
-                                                  ngen_cal_type        = 'validation',
-                                                  restart_dir          = restart_dir,
-                                                  simulation_time      = validation_time,
-                                                  evaluation_time      = valid_eval_time,
-                                                  num_proc             = nproc_local)
+def driver_ngen_with_calibration():
 
-            run_command = f"python {workflow_dir}/src_py/validation.py configs/ngen-cal_valid_config.yaml"
-            # .yaml file under cat_id/configs
-            result = subprocess.call(run_command,shell=True)
+    infile = os.path.join(output_dir, "basins_passed.csv")
+    indata = pd.read_csv(infile, dtype=str)
+    
+    pool = multiprocessing.Pool(processes=basins_in_par)
+
+    tuple_list = list(zip(indata["basin_id"], indata['n_cats']))
+
+    results = pool.map(run_ngen_with_calibration, tuple_list)
+
+    pool.close()
+    pool.join()
 
 
 #####################################################################
 def generate_partition_basin_file(ncats, gpkg_file):
 
-    nproc_local = nproc
+    np_per_basin_local = np_per_basin
     json_dir   = "json"
 
-    if (ncats <= nproc_local):
-        nproc_local = ncats
-    elif(nproc_adaptive):
-        nproc_local = min(int(ncats/nproc_local), 20)
+    if (ncats <= np_per_basin_local):
+        np_per_basin_local = ncats
+    elif(np_per_basin_adaptive):
+        np_per_basin_local = min(int(ncats/np_per_basin_local), 20)
 
     fpar = " "
     
-    if (nproc_local > 1):
-        fpar = os.path.join(json_dir, f"partition_{nproc_local}.json")
-        partition=f"{ngen_dir}/cmake_build/partitionGenerator {gpkg_file} {gpkg_file} {fpar} {nproc_local} \"\" \"\" "
+    if (np_per_basin_local > 1):
+        fpar = os.path.join(json_dir, f"partition_{np_per_basin_local}.json")
+        partition=f"{ngen_dir}/cmake_build/partitionGenerator {gpkg_file} {gpkg_file} {fpar} {np_per_basin_local} \"\" \"\" "
         result = subprocess.call(partition,shell=True)
 
-    return nproc_local, fpar
+    return np_per_basin_local, fpar
 
 if __name__ == "__main__":
 
-    if (nproc > 1 and not os.path.exists(f"{ngen_dir}/cmake_build/partitionGenerator")):
+    if (np_per_basin > 1 and not os.path.exists(f"{ngen_dir}/cmake_build/partitionGenerator")):
         sys.exit("Partitioning geopackage is requested but partitionGenerator does not exit! Quitting...")
 
 
@@ -222,5 +232,5 @@ if __name__ == "__main__":
         run_ngen_without_calibration()
     else:
         print (f'Running NextGen with {ngen_cal_type}')
-        run_ngen_with_calibration()
+        driver_ngen_with_calibration()
         
