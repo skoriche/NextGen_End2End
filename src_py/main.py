@@ -44,8 +44,7 @@ import helper
 # is_netcdf_forcing          : boolean | True if forcing data is in netcdf format
 # clean                      : str/lst | Options = all, existing, none (all deletes everything other than data directory, existing deletes
 #                                        existing simulation configs, json, and outputs directories
-# num_processors_config      : int     | Number of processors for generating config/realiation files
-# num_processors_sim         : int     | Number of processors for catchment/geopackage partition for ngen parallel runs
+# basins_in_par              : int     | Number of basin running in parallel for generating config/realiation files
 # setup_simulation           : boolean | True to create files for simulaiton;
 # rename_existing_simulation : string  | move the existing simulation set (json, configs, outputs dirs) to this directory, e.g. "sim_cfe1.0"
 
@@ -100,8 +99,7 @@ surface_runoff_scheme      = dformul['surface_runoff_scheme']
 clean                      = dformul.get('clean', "none")
 is_routing                 = dformul.get('is_routing', False)
 verbosity                  = dformul.get('verbosity', 0)
-num_processors_config      = dformul.get('num_processors_config', 1)
-num_processors_sim         = dformul.get('num_processors_sim', 1)
+basins_in_par              = dformul.get('basins_in_par', 1)
 setup_simulation           = dformul.get('setup_simulation', True)
 rename_existing_simulation = dformul.get('rename_existing_simulation', "")
 schema_type                = dformul.get('schema_type', "noaa-owp")
@@ -331,7 +329,7 @@ if __name__ == "__main__":
     # all output directories with output_dir/cat_id
     output_dirs = [output_dir / Path(g).name for g in gpkg_dirs ]
 
-    success_ncats = main(nproc = num_processors_config)
+    success_ncats = main(nproc = basins_in_par)
 
     end_time = time.time()
     total_time = end_time - start_time # in seconds

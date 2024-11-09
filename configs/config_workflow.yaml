@@ -54,9 +54,9 @@ formulation :
   setup_simulation           : True
   verbosity                  : 0
 
-  num_processors_sim         : 1
-  num_processors_adaptive    : False
-  num_processors_config      : 1
+  np_per_basin               : 1         # number of processors for basin partitioning
+  np_per_basin_adaptive      : False     # adaptive - set by the workflow
+  basins_in_par              : 2         # use for both config files and simulations
 
   rename_existing_simulation : ""
 
