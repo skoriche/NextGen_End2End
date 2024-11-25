@@ -32,9 +32,9 @@
 
 # - reinstall_hydrofabric    # Defaults to FALSE. TRUE updates/overwrites the existing hydrofabric
 # - reinstall_arrow          # Defaults to FALSE. old arrow package or arrow installed without S3 support can cause issues, 
-                             # typical error msg "Error: NotImplemented: Got S3 URI but Arrow compiled without S3 support"
-                             # setting it to TRUE to install arrow package with S3 support 
-                             # (see install_load_libs.R for more instructions)
+# typical error msg "Error: NotImplemented: Got S3 URI but Arrow compiled without S3 support"
+# setting it to TRUE to install arrow package with S3 support 
+# (see install_load_libs.R for more instructions)
 # - dem_infile = "/vsicurl/https://lynker-spatial.s3.amazonaws.com/gridded-resources/dem.vrt"
 
 
@@ -49,9 +49,9 @@ setup <-function() {
   } else if (length(args) > 1) {
     stop("Please provide only one argument (input.yaml).")
   } else {
-    infile_config <- "/Users/ahmadjan/codes/workflows/basin_workflow/configs/config_workflow.yaml"
+    infile_config <- "~/Lauren/basin_workflow/configs/config_workflow.yaml"
   }
-
+  
   if (!file.exists(infile_config)) {
     print(paste0("input config file does not exist, provided: ", infile_config))
     return(1)
@@ -66,12 +66,12 @@ setup <-function() {
   nproc             <<- inputs$gpkg_model_params$number_processors
   reinstall_hydrofabric <<- inputs$gpkg_model_params$reinstall_hydrofabric
   write_attr_parquet    <<- inputs$gpkg_model_params$write_attributes_parquet
-
+  
   source(paste0(workflow_dir, "/src_r/install_load_libs.R"))
   source(glue("{workflow_dir}/src_r/custom_functions.R"))
   
   dem_input_file        <<- get_param(inputs, "gpkg_model_params$dem_input_file", "s3://lynker-spatial/gridded-resources/dem.vrt")
-
+  
   dem_output_dir        <<- get_param(inputs, "gpkg_model_params$dem_output_dir", "")
   
   use_gage_id   <<- get_param(inputs, "gpkg_model_params$options$use_gage_id$use_gage_id", FALSE)
@@ -122,7 +122,7 @@ if (use_gage_id == TRUE) {
   # Modify this part according your settings
   
   stopifnot( length(gage_ids) > 0)
-
+  
   cats_failed <- driver_given_gage_IDs(gage_id = gage_ids, 
                                        output_dir = output_dir, 
                                        hf_source = hf_source,
@@ -130,7 +130,7 @@ if (use_gage_id == TRUE) {
                                        write_attr_parquet = write_attr_parquet,
                                        dem_output_dir = dem_output_dir,
                                        dem_input_file = dem_input_file
-                                       )
+  )
   
   
 } else if (use_gage_file == TRUE) {
@@ -145,9 +145,9 @@ if (use_gage_id == TRUE) {
                                        write_attr_parquet = write_attr_parquet,
                                        dem_output_dir = dem_output_dir,
                                        dem_input_file = dem_input_file
-                                       )
+  )
 } else if (use_gpkg == TRUE) {
-
+  
   gage_files = list.files(gpkg_dir, full.names = TRUE, pattern = pattern)
   
   cats_failed <- driver_given_gpkg(gage_files = gage_files, 
@@ -157,7 +157,7 @@ if (use_gage_id == TRUE) {
                                    nproc = nproc,
                                    dem_output_dir = dem_output_dir,
                                    dem_input_file = dem_input_file
-                                   )
+  )
   
 }
 
@@ -167,7 +167,7 @@ time_taken <- as.numeric(end_time - start_time, units = "secs")
 print (paste0("Time total = ", time_taken))
 
 if (length(cats_failed) > 0) {
-   print(paste0("failed_cats ", cats_failed))
+  print(paste0("failed_cats ", cats_failed))
 }
 
 

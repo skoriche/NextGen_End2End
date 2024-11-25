@@ -34,8 +34,9 @@ driver_given_gage_IDs <- function(gage_ids,
                                 "write_attr_parquet",
                                 "dem_output_dir",
                                 "dem_input_file",
-                                "hf_source",
-                                "as_sqlite"),
+                                "hf_source"#,
+                                # "as_sqlite"
+                                ),
                 envir = environment())
   
   #evaluate an expression on in the global environment each node of the cluster; here loading packages
@@ -295,6 +296,7 @@ run_driver <- function(gage_id = NULL,
       hfsubsetR::get_subset(nldi_feature = list(featureSource="nwissite", featureID=fid),
                             outfile = outfile, 
                             hf_version = '2.1.1', 
+                            lyrs = c("divides", "flowlines", "network", "nexus"),
                             type = 'nextgen',
                             overwrite = TRUE)
       
