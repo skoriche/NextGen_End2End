@@ -34,8 +34,7 @@ driver_given_gage_IDs <- function(gage_ids,
                                 "write_attr_parquet",
                                 "dem_output_dir",
                                 "dem_input_file",
-                                "hf_source"#,
-                                # "as_sqlite"
+                                "hf_source"
                                 ),
                 envir = environment())
   

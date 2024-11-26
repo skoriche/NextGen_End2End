@@ -70,7 +70,7 @@ add_model_attributes <- function(div_infile, hf_version = 'v2.1.1', write_attr_p
   base = 's3://lynker-spatial/hydrofabric/v2.1.1/nextgen/conus'
 
   # net has divide_id, id, and vupid that are used for filtering below
-  net = as_sqlite(div_infile, "network") 
+  net = sf::read_sf(div_infile, "network") 
 
   # Courtesy of Mike Johnson
   print ("Extracting model-attributes from .parquet file on S3 bucket")
