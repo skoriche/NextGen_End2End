@@ -27,9 +27,9 @@ driver_given_gage_IDs <- function(gage_ids,
   on.exit(parallel::stopCluster(cl))  # this ensures the cluster is stopped on exit
   
   # Export all environment variables and functions here, so all worker/nodes have access to them
-  clusterExport(cl, varlist = c(functions_lst, 
-                                "libraries_lst", 
-                                "output_dir", 
+  clusterExport(cl, varlist = c(functions_lst,
+                                "libraries_lst",
+                                "output_dir",
                                 "failed_dir",
                                 "write_attr_parquet",
                                 "dem_output_dir",
@@ -52,8 +52,8 @@ driver_given_gage_IDs <- function(gage_ids,
   cats_failed <- pblapply(X = gage_ids, FUN = process_catchment_id, cl = cl, failed_dir)
   
   #stopCluster(cl)
-  
-  #lapply(X = gage_ids, FUN = process_catchment_id, output_dir = output_dir, failed_dir = failed_dir)
+
+  # lapply(X = gage_ids, FUN = process_catchment_id, failed_dir = failed_dir)
   
   
   setwd(output_dir)
