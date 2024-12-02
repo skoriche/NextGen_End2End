@@ -34,8 +34,8 @@ driver_given_gage_IDs <- function(gage_ids,
                                 "write_attr_parquet",
                                 "dem_output_dir",
                                 "dem_input_file",
-                                "hf_source",
-                                "as_sqlite"),
+                                "hf_source"
+                                ),
                 envir = environment())
   
   #evaluate an expression on in the global environment each node of the cluster; here loading packages
@@ -53,7 +53,7 @@ driver_given_gage_IDs <- function(gage_ids,
   
   #stopCluster(cl)
   
-  #lapply(X = gage_ids, FUN = process_catchment_id, output_dir = output_dir, failed_dir = failed_dir)
+  # lapply(X = gage_ids, FUN = process_catchment_id, failed_dir = failed_dir)
   
   
   setwd(output_dir)
@@ -167,9 +167,9 @@ driver_given_gpkg <- function(gage_files,
                                 "hf_source",
                                 "gpkg_dir",
                                 "as_sqlite",
-				"write_attr_parquet",
+				                        "write_attr_parquet",
                                 "dem_output_dir",
-				"dem_input_file"),
+				                        "dem_input_file"),
                 envir = environment())
   
   #evaluate an expression on in the global environment each node of the cluster; here loading packages
@@ -293,22 +293,25 @@ run_driver <- function(gage_id = NULL,
     
     if (is.null(hf_source)) {
       hfsubsetR::get_subset(nldi_feature = list(featureSource="nwissite", featureID=fid),
-                            outfile = outfile, 
-                            hf_version = '2.1.1', 
+                            outfile = outfile,
+                            gpkg = hf_gpkg_path,
+                            hf_version = '2.2',
+                            lyrs = c("divides", "flowpaths", "network", "nexus", 
+                                     "flowpath-attributes", "flowpath-attributes-ml",
+                                     "divide-attributes"),
                             type = 'nextgen',
                             overwrite = TRUE)
-      
     } else {
       # if local synchronized hydrofabric exists
       hfsubsetR::get_subset(nldi_feature = list(featureSource="nwissite", featureID=fid),
                             outfile = outfile, 
-                            hf_version = '2.1.1', 
+                            hf_version = '2.2', 
                             type = 'nextgen',
                             source = hf_source,
-                            lyrs = c("divides", "flowlines", "network", "nexus"),
+                            lyrs = c("divides", "flowpaths", "network", "nexus", 
+                                     "flowpath-attributes", "flowpath-attributes-ml",
+                                     "divide-attributes"),
                             overwrite = TRUE)
-      #, 
-      #"model-attributes", 'flowpath-attributes'
     }
 
     time.taken <- as.numeric(Sys.time() - start.time, units = "secs") #end.time - start.time
@@ -334,22 +337,22 @@ run_driver <- function(gage_id = NULL,
   # STEP #4: Add models' attributes from the parquet file to the geopackage
   # this TRUE will be changed once synchronized HF bugs are fixed
 
-  if(is.null(hf_source) | TRUE) {
-    # print layers before appending model attributes
-    layers_before_cfe_attr <- sf::st_layers(outfile)
-    #print (layers_before_cfe_attr$name)
-    start.time <- Sys.time()
+  # if(is.null(hf_source) | TRUE) {
+  #   print layers before appending model attributes
+  #   layers_before_cfe_attr <- sf::st_layers(outfile)
+  #   print (layers_before_cfe_attr$name)
+  #   start.time <- Sys.time()
+  # 
+  #   d_attr <- add_model_attributes(div_infile = outfile,
+  #                                  write_attr_parquet = write_attr_parquet)
+  #   
+  #   time.taken <- as.numeric(Sys.time() - start.time, units = "secs") #end.time - start.time
+  #   print (paste0("Time (model attrs) = ", time.taken))    
+  # } else {
+    d_attr <- read_sf(outfile, 'divide-attributes')
+  # }
 
-    m_attr <- add_model_attributes(div_infile = outfile, 
-                                   write_attr_parquet = write_attr_parquet)
-    
-    time.taken <- as.numeric(Sys.time() - start.time, units = "secs") #end.time - start.time
-    print (paste0("Time (model attrs) = ", time.taken))    
-  } else {
-    m_attr <- read_sf(outfile, 'model-attributes')
-  }
-
-  layers_after_cfe_attr <- sf::st_layers(outfile)
+  # layers_after_cfe_attr <- sf::st_layers(outfile)
   #print (layers_after_cfe_attr$name)
   
   ############################### GENERATE TWI ##################################
@@ -380,7 +383,7 @@ run_driver <- function(gage_id = NULL,
   
   ### NOTES: Pre-computed TWI
   # Note 1: model attributes layer ships with pre-computed TWI distribution with four equal quantiles
-  #m_attr$twi_dist_4
+  #d_attr$twi_dist_4
   
   # Note 2: The user can also compute their own distribution from the pre-computed TWI using the dataset
   # available at s3://lynker-spatial/gridded-resources/twi.vrt
@@ -433,20 +436,20 @@ run_driver <- function(gage_id = NULL,
   # STEP #8: Append GIUH, TWI, width function, and Nash cascade N and K parameters
   # to model attributes layers
 
-  m_attr$giuh <- giuh_dat_values$giuh             # append GIUH column to the model attributes layer
-  m_attr$twi  <- twi_dat_values$twi               # append TWI column to the model attributes layer
-  m_attr$width_dist <- twi_dat_values$width_dist  # append width distribution column to the model attributes layer
-  m_attr$N_nash_surface <- nash_params_surface$N_nash
-  m_attr$K_nash_surface <- nash_params_surface$K_nash
+  d_attr$giuh <- giuh_dat_values$giuh             # append GIUH column to the model attributes layer
+  d_attr$twi  <- twi_dat_values$twi               # append TWI column to the model attributes layer
+  d_attr$width_dist <- twi_dat_values$width_dist  # append width distribution column to the model attributes layer
+  d_attr$N_nash_surface <- nash_params_surface$N_nash
+  d_attr$K_nash_surface <- nash_params_surface$K_nash
 
   if (!write_attr_parquet) {
-    sf::st_write(m_attr, outfile,layer = "model-attributes", append = FALSE)  
+    sf::st_write(d_attr, outfile,layer = "divide-attributes", append = FALSE)  
   }
   else {
     #var = strsplit(outfile, "\\.")[[1]][1]
     var = glue("{getwd()}/data")
-    attr_par_dir = glue("{var}/model-attributes.parquet")
-    arrow::write_parquet(m_attr,attr_par_dir)
+    attr_par_dir = glue("{var}/divide-attributes.parquet")
+    arrow::write_parquet(d_attr,attr_par_dir)
   }
 
 }
