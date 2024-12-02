@@ -78,3 +78,6 @@ dist/
 
 #plugins
 basin_workflow/ngen_cal_plugins/build
+.Rproj.user
+.Rhistory
+.Rproj
