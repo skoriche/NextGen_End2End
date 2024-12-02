@@ -49,7 +49,7 @@ setup <-function() {
   } else if (length(args) > 1) {
     stop("Please provide only one argument (input.yaml).")
   } else {
-    infile_config <- "/Users/ahmadjan/codes/workflows/basin_workflow/configs/config_workflow.yaml"
+    infile_config <- "/Users/laurenbolotin/Lauren/basin_workflow/configs/config_workflow.yaml"
   }
 
   if (!file.exists(infile_config)) {
@@ -62,6 +62,7 @@ setup <-function() {
   workflow_dir      <<- inputs$workflow_dir
   output_dir        <<- inputs$output_dir
   hf_source         <<- inputs$gpkg_model_params$hf_source
+  hf_gpkg_path     <<- inputs$gpkg_model_params$hf_gpkg_path
   reinstall_arrow   <<- inputs$gpkg_model_params$reinstall_arrow
   nproc             <<- inputs$gpkg_model_params$number_processors
   reinstall_hydrofabric <<- inputs$gpkg_model_params$reinstall_hydrofabric
