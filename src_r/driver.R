@@ -15,9 +15,9 @@ driver_given_gage_IDs <- function(gage_ids,
                                   nproc = 1) {
   print ("DRIVER GIVEN GAGE ID")
   # create directory to stored catchment geopackage in case of errors or missing data
-  #failed_dir = "failed_cats"
-  dir.create(failed_dir, recursive = TRUE, showWarnings = FALSE)
-  
+  failed_dir = "failed_cats"
+  # dir.create(failed_dir, recursive = TRUE, showWarnings = FALSE)
+  # 
   # if (nproc > parallel::detectCores()) {
   #   nproc = parallel::detectCores() - 1
   # }
@@ -27,9 +27,9 @@ driver_given_gage_IDs <- function(gage_ids,
   # on.exit(parallel::stopCluster(cl))  # this ensures the cluster is stopped on exit
   
   # Export all environment variables and functions here, so all worker/nodes have access to them
-  # clusterExport(cl, varlist = c(functions_lst, 
-  #                               "libraries_lst", 
-  #                               "output_dir", 
+  # clusterExport(cl, varlist = c(functions_lst,
+  #                               "libraries_lst",
+  #                               "output_dir",
   #                               "failed_dir",
   #                               "write_attr_parquet",
   #                               "dem_output_dir",
@@ -50,9 +50,9 @@ driver_given_gage_IDs <- function(gage_ids,
   # Initialize and call pb (progress bar)
   
   # cats_failed <- pblapply(X = gage_ids, FUN = process_catchment_id, cl = cl, failed_dir)
-  
-  #stopCluster(cl)
-  
+  # 
+  # stopCluster(cl)
+  # 
   lapply(X = gage_ids, FUN = process_catchment_id, failed_dir = failed_dir)
   
   
