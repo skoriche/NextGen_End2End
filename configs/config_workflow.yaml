@@ -5,14 +5,16 @@
 # make sure to install yaml package using install.packages("yaml") if not installed already
 
 workflow_dir  : "/Users/laurenbolotin/Lauren/basin_workflow"
-input_dir     : "/Users/laurenbolotin/Lauren/benchmark/benchmark2.0/input"
+input_dir     : "/Users/laurenbolotin/Lauren/benchmark/benchmark2.0/output"
 output_dir    : "/Users/laurenbolotin/Lauren/benchmark/benchmark2.0/output"
 
 
 
 gpkg_model_params :
   hf_source                : NULL
-  hf_gpkg_path             : "/Users/laurenbolotin/Lauren/hydrofabric/data/v2.2/conus_nextgen.gpkg"
+  hf_version               : "2.2" # Only enter version number, e.g. "2.2" or "2.1.1"
+  # Ensure that this gpkg matches the hf_version specified above:
+  hf_gpkg_path             : "/Users/laurenbolotin/Lauren/hydrofabric/data/v2.2/conus_nextgen.gpkg" 
   dem_output_dir           : "/Users/laurenbolotin/Lauren/benchmark/benchmark2.0/dem"
   number_processors        : 4
   write_attributes_parquet : FALSE
@@ -25,7 +27,8 @@ gpkg_model_params :
       #gage_ids    :  "0214655255" #"10154200" #"03366500"
       #gage_ids    : ["04115265", "07301410", "04063700", "12488500"]
       # gage_ids     : ["02378300", "02471078", "02381600", "02465000"]
-      gage_ids     : ["02378300"]
+      # gage_ids     : ["02378300"]
+      gage_ids       : ["07165562"]
     use_gage_file :
       use_gage_file : FALSE
       gage_file     : "/Users/ahmadjan/Core/SimulationsData/projects/ngen_evaluation_camels/CAMELS_v3_calib_BestModelsAll.csv"
@@ -37,12 +40,11 @@ gpkg_model_params :
       pattern   :  "hf_v211_"
 
 
-forcings:
-  forcing_format     : ".nc"
-  forcing_venv_dir   : "/Users/ahmadjan/.ngen_forcing/" # provide only when using forcing data downloaders
-  forcing_dir        : "/Users/ahmadjan/Core/SimulationsData/projects/tests_ss/{*}/data/forcing/2010_to_2011/"
-  forcing_time       : '{"start_time" : "2010-09-20 00:00:00", "end_time" : "2010-09-25 00:00:00"}'
-  
+forcings: 
+  forcing_format     : ".nc" 
+  forcing_venv_dir   : "/Users/laurenbolotin/.venv_forcing/" # provide only when using forcing data downloaders
+  forcing_dir        : "/Users/laurenbolotin/Lauren/benchmark/benchmark2.0/output/{*}/data/forcing/2010_to_2011/" # start year and end year +1 ; Before the asterisk should be the same as your output directory above
+  forcing_time       : '{"start_time" : "2010-09-20 00:00:00", "end_time" : "2010-09-25 00:00:00"}' 
 
 formulation :
   ngen_dir           : "/Users/ahmadjan/codes/ngen/ngen"
