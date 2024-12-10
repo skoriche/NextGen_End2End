@@ -62,6 +62,7 @@ setup <-function() {
   workflow_dir      <<- inputs$workflow_dir
   output_dir        <<- inputs$output_dir
   hf_source         <<- inputs$gpkg_model_params$hf_source
+  hf_version        <<- inputs$gpkg_model_params$hf_version
   hf_gpkg_path     <<- inputs$gpkg_model_params$hf_gpkg_path
   reinstall_arrow   <<- inputs$gpkg_model_params$reinstall_arrow
   nproc             <<- inputs$gpkg_model_params$number_processors
