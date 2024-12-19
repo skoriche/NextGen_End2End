@@ -72,7 +72,7 @@ setup <-function() {
   source(paste0(workflow_dir, "/src_r/install_load_libs.R"))
   source(glue("{workflow_dir}/src_r/custom_functions.R"))
   
-  dem_input_file        <<- get_param(inputs, "gpkg_model_params$dem_input_file", "s3://lynker-spatial/gridded-resources/dem.vrt")
+  dem_input_file        <<- get_param(inputs, "gpkg_model_params$dem_input_file", "s3://lynker-spatial/gridded-resources/USGS_seamless_13.vrt")
 
   dem_output_dir        <<- get_param(inputs, "gpkg_model_params$dem_output_dir", "")
   
