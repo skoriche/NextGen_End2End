@@ -16,12 +16,12 @@ driver_given_gage_IDs <- function(gage_ids,
   print ("DRIVER GIVEN GAGE ID")
   # create directory to stored catchment geopackage in case of errors or missing data
   failed_dir = "failed_cats"
-  # dir.create(failed_dir, recursive = TRUE, showWarnings = FALSE)
-  # 
+  dir.create(failed_dir, recursive = TRUE, showWarnings = FALSE)
+
   # if (nproc > parallel::detectCores()) {
   #   nproc = parallel::detectCores() - 1
   # }
-  # 
+
   # make a cluster of multicores
   # cl <- parallel::makeCluster(nproc)
   # on.exit(parallel::stopCluster(cl))  # this ensures the cluster is stopped on exit
@@ -50,15 +50,15 @@ driver_given_gage_IDs <- function(gage_ids,
   # Initialize and call pb (progress bar)
   
   # cats_failed <- pblapply(X = gage_ids, FUN = process_catchment_id, cl = cl, failed_dir)
-  # 
+
   # stopCluster(cl)
-  # 
+
   lapply(X = gage_ids, FUN = process_catchment_id, failed_dir = failed_dir)
   
   
   setwd(output_dir)
   
-  return(cats_failed)
+  # return(cats_failed)
 }
 
 #-----------------------------------------------------------------------------#
@@ -292,14 +292,34 @@ run_driver <- function(gage_id = NULL,
     outfile <- glue('data/gage_{gage_id}.gpkg')
     
     if (is.null(hf_source)) {
-      hfsubsetR::get_subset(nldi_feature = list(featureSource="nwissite", featureID=fid),
+      # hfsubsetR::get_subset(nldi_feature = list(featureSource="nwissite", featureID=fid),
+      #                       outfile = outfile,
+      #                       gpkg = hf_gpkg_path,
+      #                       hf_version = hf_version,
+      #                       lyrs = c("divides", "flowpaths", "network", "nexus", 
+      #                                "flowpath-attributes", "flowpath-attributes-ml",
+      #                                "divide-attributes"),
+      #                       type = 'nextgen',
+      #                       overwrite = TRUE)
+      # ------
+      input = hf_gpkg_path
+      
+      divs = sf::read_sf(input, "divides") 
+      
+      coords = sf::read_sf(glue('https://api.water.usgs.gov/nldi/linked-data/nwissite/USGS-{gage_id}')) |> 
+        sf::st_transform(sf::st_crs(divs))
+      
+      outfile <- glue('data/gage_{gage_id}.gpkg')
+      
+      # int <-  sf::st_as_sf(divs, coords)
+      int <- sf::st_intersection(divs, coords) # can also do st_filter() 
+      
+      hfsubsetR::get_subset(id = int$id,
                             outfile = outfile,
-                            gpkg = hf_gpkg_path,
-                            hf_version = hf_version,
+                            gpkg = input,
                             lyrs = c("divides", "flowpaths", "network", "nexus", 
                                      "flowpath-attributes", "flowpath-attributes-ml",
                                      "divide-attributes"),
-                            type = 'nextgen',
                             overwrite = TRUE)
     } else {
       # if local synchronized hydrofabric exists

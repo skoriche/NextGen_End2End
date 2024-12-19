@@ -24,8 +24,8 @@ dem_function <- function(div_infile,
   div_bf <- st_buffer(div,dist=5000)
   
   dem <- crop(elev, project(vect(div_bf), crs(elev)), snap = "out")
-  cm_to_m <- 0.01
-  dem <- dem * cm_to_m
+  # cm_to_m <- 0.01
+  # dem <- dem * cm_to_m
 
   # Checking for NaN values
   if (any(is.nan(values(dem)))) {
@@ -34,6 +34,22 @@ dem_function <- function(div_infile,
   
   #dem[is.nan(dem)] <- NA  # Convert NaN to NA
   dem[dem < 0] <- 0      # Convert negative values to NA
+  dem <- raster(dem)
+  
+  # First method
+  # dem_coarse <- raster(ncol = ncol(dem), nrow = nrow(dem), res = 30)
+  # dem <- raster::resample(dem, dem_coarse, method = "bilinear") # doesn't seem to work
+  # dem_coarse <- raster(ncol = ncol(dem), nrow = nrow(dem), res = 30, crs = crs(dem))
+  # dem <- resample(dem, dem_coarse, method = "bilinear") # doesn't seem to work
+  # Final first method
+  # dem_coarse <- raster(ncol = ncol(dem)/3, nrow = nrow(dem)/3, crs = crs(dem))# res = res
+  # dem_resample <- raster::resample(dem, dem_coarse, method = "bilinear") # doesn't seem to work
+
+  
+  # Second method
+  dem <- aggregate(dem, fact = 3, fun = mean)
+  
+  # dem <- terra::rast(dem_resample)
   
   writeRaster(dem, glue("{dem_output_dir}/dem.tif"), overwrite = TRUE)
   
