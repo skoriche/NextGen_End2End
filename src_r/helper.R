@@ -1,5 +1,7 @@
 # @author Ahmad Jan Khattak
-# @email ahmad.jan@noaa.gov
+# @email ahmad.jan.khattak@noaa.gov
+# @author Lauren Bolotin
+# @email lauren.bolotin@noaa.gov
 # @date  February 05, 2024
 
 # Get the DEM
@@ -15,15 +17,20 @@ dem_function <- function(div_infile,
     cat ("Error: dem_input_file does not exist: provided ", dem_input_file, "\n")
     cat("Details:", e$message, "\n")
   })
-
   
   # Get the catchment geopackage
   div <- read_sf(div_infile, 'divides')
+  crs_div <- st_crs(div)
+  crs_elev <- crs(elev)
+  
+  if (!identical(crs_div, crs_elev)) {
+    div <- st_transform(div, crs = crs_elev)
+  }
   
   # Buffer because we want to guarantee we don not have boundary issues when processing the DEM
-  div_bf <- st_buffer(div,dist=5000)
+  div_bf <- st_buffer(div,dist=5000) # didn't use this for the one AK basin
   
-  dem <- crop(elev, project(vect(div_bf), crs(elev)), snap = "out")
+  dem <- crop(elev, project(vect(div_bf), crs(elev)), snap = "out") # cropped the one AK basin to div, not div_bf
 
   if (grepl("dem.vrt", dem_input_file)) { # If using the original DEM, need to convert units
     cm_to_m <- 0.01
@@ -68,6 +75,58 @@ fun_crop_upper <- function(values, coverage_fraction) {
   percentile_90 <- unname(quantile(data, probs = 0.85, na.rm = TRUE))
   data[data >= percentile_90] = percentile_90
 }
+
+corrected_distrib_func = function(value, coverage_fraction, breaks = 10, constrain = FALSE){
+  
+  if (length(value) <= 0 | all(is.nan(value))) {
+    return("[]")
+  }
+  
+  x1 = value*coverage_fraction
+  x1 = x1[!is.na(x1)]
+  
+  if(constrain & length(breaks) > 1){
+    
+    breaks_tmp = c(breaks[1],breaks[2])
+    
+    ulimit = max(x1, na.rm = TRUE)
+    
+    if (ulimit < max(breaks, na.rm = TRUE)){
+      ulimit = min(breaks[breaks >= ulimit])
+    }
+    
+    breaks = breaks[breaks <= ulimit]
+    
+    if (length(breaks) == 1){
+      breaks = breaks_tmp
+    }
+    
+  }
+  
+  tmp = as.data.frame(table(cut(x1, breaks = breaks)))
+  
+  tmp$v = as.numeric(gsub("]", "", sub('.*,\\s*', '', tmp$Var1)))
+  
+  len <- length(tmp$Freq)
+  len2 <- len - 1
+  
+  if (sum(tmp$Freq) == 0){
+    tmp$Freq[1:len2] <- 0
+    tmp$Freq[len] <- 1
+  }  
+  tmp$frequency = tmp$Freq / sum(tmp$Freq)
+  
+  
+  if (sum(tmp$frequency) > 1.01 | sum(tmp$frequency) < 0.99){
+    stop("No data in the distribution")
+  }
+  
+  as.character(toJSON(tmp[,c("v", "frequency")]))
+  
+  
+}
+
+
 
 
 # Add model attribtes to the geopackage
