@@ -59,6 +59,13 @@ width_function <- function(div_infile, dem_output_dir) {
   
   flowpath_length <- rast(glue("{dem_output_dir}/downslope_fp_length.tif"))
   
+  crs_div <- st_crs(div)
+  crs_flowpath_l <- crs(flowpath_length)
+  
+  if (!identical(crs_div, crs_flowpath_l)) {
+    div <- st_transform(div, crs = crs_flowpath_l)
+  }
+  
   fp_min_ftn = zonal::execute_zonal(data = flowpath_length,
                              geom = div,
                              ID = "divide_id",
@@ -89,7 +96,7 @@ width_function <- function(div_infile, dem_output_dir) {
   width_dist <- execute_zonal(data = downslope_fp_distance_cat_outlet,
                               geom = div,
                               ID = "divide_id",
-                              fun = zonal::distribution,
+                              fun = corrected_distrib_func,
                               breaks = c(0.0,0.1,500,1000,1500))
   
   return(width_dist)
