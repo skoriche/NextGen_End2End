@@ -76,6 +76,7 @@ fun_crop_upper <- function(values, coverage_fraction) {
   data[data >= percentile_90] = percentile_90
 }
 
+# Adapted from the distribution function at: https://github.com/mikejohnson51/zonal/blob/master/R/custom_function.R
 corrected_distrib_func = function(value, coverage_fraction, breaks = 10, constrain = FALSE){
   
   if (length(value) <= 0 | all(is.nan(value))) {
