@@ -64,6 +64,12 @@ giuh_function <- function(div_infile, dem_output_dir, vel_channel = 1, vel_overl
   
   # from basin outlet to catchment outlet workflow
   giuh_minute <- rast(glue("{dem_output_dir}/giuh_minute.tif"))
+  crs_div <- st_crs(div)
+  crs_giuh <- crs(giuh_minute)
+  
+  if (!identical(crs_div, crs_giuh)) {
+    div <- st_transform(div, crs = crs_giuh)
+  }
   
   time_min_ftn = execute_zonal(data = giuh_minute,
                                geom = div,
@@ -98,7 +104,7 @@ giuh_function <- function(div_infile, dem_output_dir, vel_channel = 1, vel_overl
   giuh_dist <- execute_zonal(data = downslope_giuh_cat_outlet,
                              geom = div,
                              ID = "divide_id",
-                             fun = zonal::distribution,
+                             fun = corrected_distrib_func,
                              breaks = seq(0.0, 600, by=60),
                              constrain = TRUE)
   
