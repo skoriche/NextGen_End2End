@@ -151,40 +151,40 @@ driver_given_gpkg <- function(gage_files,
   }
   dir.create(failed_dir, recursive = TRUE, showWarnings = FALSE)
   
-  if (nproc > parallel::detectCores()) {
-    nproc = parallel::detectCores() - 1
-  }
+  # if (nproc > parallel::detectCores()) {
+  #   nproc = parallel::detectCores() - 1
+  # }
   
   # make a cluster of multicores
-  cl <- parallel::makeCluster(nproc)
-  on.exit(parallel::stopCluster(cl))  # this ensures the cluster is stopped on exit
+  # cl <- parallel::makeCluster(nproc)
+  # on.exit(parallel::stopCluster(cl))  # this ensures the cluster is stopped on exit
 
   # Export all environment variables and functions here, so all worker/nodes have access to them
-  clusterExport(cl, varlist = c(functions_lst, 
-                                "libraries_lst", 
-                                "output_dir", 
-                                "failed_dir",
-                                "hf_source",
-                                "gpkg_dir",
-                                "as_sqlite",
-				                        "write_attr_parquet",
-                                "dem_output_dir",
-				                        "dem_input_file"),
-                envir = environment())
+#   clusterExport(cl, varlist = c(functions_lst, 
+#                                 "libraries_lst", 
+#                                 "output_dir", 
+#                                 "failed_dir",
+#                                 "hf_source",
+#                                 "gpkg_dir",
+#                                 "as_sqlite",
+# 				                        "write_attr_parquet",
+#                                 "dem_output_dir",
+# 				                        "dem_input_file"),
+#                 envir = environment())
   
   #evaluate an expression on in the global environment each node of the cluster; here loading packages
-  clusterEvalQ(cl, {
-    libraries_lst <- get("libraries_lst", environment())
-    for (pkg in libraries_lst) {
-      suppressPackageStartupMessages(library(pkg, character.only = TRUE))
-    }
-  })
+  # clusterEvalQ(cl, {
+  #   libraries_lst <- get("libraries_lst", environment())
+  #   for (pkg in libraries_lst) {
+  #     suppressPackageStartupMessages(library(pkg, character.only = TRUE))
+  #   }
+  # })
   
   
   # Initialize and call pb (progress bar)
-  cats_failed <- pblapply(X = gage_files, FUN = process_gpkg, cl = cl, failed_dir)
+  #cats_failed <- pblapply(X = gage_files, FUN = process_gpkg, cl = cl, failed_dir)
   
-  #cats_failed <- lapply(X = gage_files, FUN = process_gpkg, failed_dir)
+  cats_failed <- lapply(X = gage_files, FUN = process_gpkg, failed_dir)
   setwd(output_dir)
   
   return(cats_failed)
@@ -317,8 +317,7 @@ run_driver <- function(gage_id = NULL,
       hfsubsetR::get_subset(id = int$id,
                             outfile = outfile,
                             gpkg = input,
-                            lyrs = c("divides", "flowpaths", "network", "nexus", 
-                                     "flowpath-attributes", "flowpath-attributes-ml",
+                            lyrs = c("divides", "flowpaths", "network", "nexus",
                                      "divide-attributes"),
                             overwrite = TRUE)
     } else {
