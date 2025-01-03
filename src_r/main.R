@@ -1,5 +1,7 @@
 # @author Ahmad Jan Khattak
-# @email ahmad.jan@noaa.gov
+# @email ahmad.jan.khattak@noaa.gov
+# @author Lauren Bolotin
+# @email lauren.bolotin@noaa.gov
 # @date  December 22, 2023
 
 # The script downloads geopackge(s) given USGS gauge id(s) (also can read gpkg from the disk)
@@ -72,6 +74,8 @@ setup <-function() {
   source(paste0(workflow_dir, "/src_r/install_load_libs.R"))
   source(glue("{workflow_dir}/src_r/custom_functions.R"))
   
+  # dem_input_file        <<- get_param(inputs, "gpkg_model_params$dem_input_file", "s3://lynker-spatial/gridded-resources/dem.vrt")
+  # Newer DEM, better for oCONUS and other previously problematic basins
   dem_input_file        <<- get_param(inputs, "gpkg_model_params$dem_input_file", "s3://lynker-spatial/gridded-resources/USGS_seamless_13.vrt")
 
   dem_output_dir        <<- get_param(inputs, "gpkg_model_params$dem_output_dir", "")
