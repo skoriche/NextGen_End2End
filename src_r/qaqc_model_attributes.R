@@ -100,7 +100,7 @@ check_giuh <- function(){
   # Use str_extract_all to extract each ordinate within curly brackets
   giuh_ords <- str_extract_all(giuh, "\\{[^\\}]+\\}")
   # Use str_extract to extract the number after "frequency": and before the closing }
-  frequencies <- lapply(giuh_ords, function(x) str_extract(x, "(?<=\"frequency\":)[0-9.]+"))
+  frequencies <- lapply(giuh_ords, function(x) str_extract(x, '(?<=\\"frequency\\":)[^}]+'))
   
   # Sum up each set of values 
   sums <- lapply(frequencies, function(x) sum(as.numeric(x)))
@@ -136,7 +136,7 @@ check_twi <- function(){
   v <- lapply(twi_ords, function(x) str_extract(x, "(?<=\"v\":)[0-9.]+"))
   
   # Use str_extract to extract the number after "frequency": and before the closing }
-  frequencies <- lapply(twi_ords, function(x) str_extract(x, "(?<=\"frequency\":)[0-9.]+"))
+  frequencies <- lapply(twi_ords, function(x) str_extract(x, '(?<=\\"frequency\\":)[^}]+'))
   
   # Sum up each set of values
   sums <- lapply(v, function(x) sum(as.numeric(x)))
@@ -171,7 +171,7 @@ check_width <- function(){
   # Use str_extract to extract the number after "v\": and before ,\"frequency"
   v <- lapply(width_ords, function(x) str_extract(x, "(?<=\"v\":)[0-9.]+"))
   # Use str_extract to extract the number after "frequency": and before the closing }
-  frequencies <- lapply(width_ords, function(x) str_extract(x, "(?<=\"frequency\":)[0-9.]+"))
+  frequencies <- lapply(width_ords, function(x) str_extract(x, '(?<=\\"frequency\\":)[^}]+'))
   
   # Check if any frequencies are missing
   if (any(is.na(frequencies))) {
@@ -235,13 +235,13 @@ check_k_nash <- function(){
 start_time <- Sys.time()
 
 # Extract the list of basins we have gpkgs for
-basins <- list.files(glue('/Users/laurenbolotin/Lauren/benchmark/benchmark2.0/final_output/output_oCONUS_new_dem_and_fixes'))
+basins <- list.files(glue('/Users/laurenbolotin/Lauren/benchmark/benchmark2.0_final/output'))
 # Remove anything that's not numeric
 basins <- basins[str_detect(basins, "^[0-9]+$")]
 
 # Run QA/QC Functions ---------------------------------------------------------
 
-# basin <- "05455500" # for testing a specific basin
+basin <- "05061000" # for testing a specific basin
 
 # Create an empty list to append basins with QA/QC issues to 
 failed_cats <- list()
@@ -252,7 +252,7 @@ for (basin in basins) {
   tryCatch({
     # Read the geopackage -------------------
     # infile <- glue('{output_dir}/new_dem/{basin}/data/gage_{basin}.gpkg')
-    infile <- glue('/Users/laurenbolotin/Lauren/benchmark/benchmark2.0/final_output/output_oCONUS_new_dem_and_fixes/{basin}/data/gage_{basin}.gpkg')
+    infile <- glue('/Users/laurenbolotin/Lauren/benchmark/benchmark2.0_final/output/{basin}/data/gage_{basin}.gpkg')
     print (paste0("Reading geopackage: ", basename(infile)))
     model_attributes <- st_read(infile, layer = "divide-attributes")
     
