@@ -6,7 +6,7 @@
 # the basin workflow
 
 # INPUT  : yaml file (see below)
-# OUTPUT : a geopackage with all model parameters, which is used for generating config and realization files
+# OUTPUT : a csv file summarizing which basins failed to pass QA/QC, and which attributes were the source of the problem
 
 library(yaml)
 library(stringr)
@@ -21,8 +21,8 @@ setup <-function() {
   } else if (length(args) > 1) {
     stop("Please provide only one argument (input.yaml).")
   } else {
-    infile_config <- "./configs/config_workflow.yaml"
-    model_attr_names <<- read.table("./configs/basefiles/model_attribute_names.txt",
+    infile_config <- "~/Lauren/basin_workflow/configs/config_workflow.yaml"
+    model_attr_names <<- read.table("~/Lauren/basin_workflow/configs/basefiles/model_attribute_names.txt",
                                     header = TRUE)
   }
   
@@ -37,16 +37,6 @@ setup <-function() {
   output_dir        <<- inputs$output_dir
 
   source(paste0(workflow_dir, "/src_r/install_load_libs.R"))
-
-  # TODO: Find better ways to use these:
-  dem_output_dir        <<- get_param(inputs, "gpkg_model_params$dem_output_dir", "")
-  
-  use_gage_id   <<- get_param(inputs, "gpkg_model_params$options$use_gage_id$use_gage_id", FALSE)
-  gage_ids      <<- get_param(inputs, "gpkg_model_params$options$use_gage_id$gage_ids", NULL)
-  
-  use_gage_file <<- get_param(inputs, "gpkg_model_params$options$use_gage_file$use_gage_file", FALSE)
-  gage_file     <<- get_param(inputs, "gpkg_model_params$options$use_gage_file$gage_file", NULL)
-  column_name   <<- get_param(inputs, "gpkg_model_params$options$use_gage_file$column_name", "")
   
   if (!file.exists(output_dir)) {
     print(glue("Output directory does not exist, provided: {output_dir}"))
@@ -72,7 +62,7 @@ check_nwm_attrs <- function(){
   
   # If any are missing, print an error
   if (length(missing_vars) > 0) {
-    failed_attrs[[length(failed_attrs) + 1]] <<- missing_vars
+    failed_attrs[[length(failed_attrs) + 1]] <<- paste(missing_vars, collapse = ", ")
     stop(paste0("Missing NWM attributes in geopackage: ", infile, " - ", missing_vars))
   }
   
@@ -94,6 +84,7 @@ check_giuh <- function(){
   }
   # Is it NA or NaN?
   if (any(is.na(giuh)) | any(is.nan(giuh))) {
+    failed_attrs[[length(failed_attrs) + 1]] <<- "GIUH"
     stop(paste0("NA or NaN found in GIUH in geopackage: ", infile))
   }
   # Extract the actual values
@@ -107,6 +98,7 @@ check_giuh <- function(){
   
   # Print an error if the sums are not equal to 1 plus or minus 0.01
   if (any(sums < 0.99) | any(sums > 1.01)) {
+    failed_attrs[[length(failed_attrs) + 1]] <<- "GIUH"
     stop(paste0("GIUH sums are not equal to 1 in geopackage: ", infile))
   }
   
@@ -124,6 +116,7 @@ check_twi <- function(){
   
   # Is it NA or NaN?
   if (any(is.na(twi)) | any(is.nan(twi))) {
+    failed_attrs[[length(failed_attrs) + 1]] <<- "TWI"
     stop(paste0("NA or NaN found in TWI in geopackage: ", infile))
   }
   
@@ -144,6 +137,7 @@ check_twi <- function(){
   
   # Print an error if the sums are not equal to 1 plus or minus 0.01
   if (any(sums < 0.99) | any(sums > 1.01)) {
+    failed_attrs[[length(failed_attrs) + 1]] <<- "TWI"
     stop(paste0("TWI sums are not equal to 1 in geopackage: ", infile))
   }
   
@@ -161,6 +155,7 @@ check_width <- function(){
   
   # Is it NA or NaN?
   if (any(is.na(width)) | any(is.nan(width))) {
+    failed_attrs[[length(failed_attrs) + 1]] <<- "width"
     stop(paste0("NA or NaN found in Width in geopackage: ", infile))
   }
   
@@ -175,6 +170,7 @@ check_width <- function(){
   
   # Check if any frequencies are missing
   if (any(is.na(frequencies))) {
+    failed_attrs[[length(failed_attrs) + 1]] <<- "width"
     stop(paste0("Frequency missing in Width in geopackage: ", infile))
   }
   
@@ -184,6 +180,7 @@ check_width <- function(){
   
   # Print an error if the sums are not equal to 1 plus or minus 0.01
   if (any(sums < 0.99) | any(sums > 1.01)) {
+    failed_attrs[[length(failed_attrs) + 1]] <<- "width"
     stop(paste0("Width sums are not equal to 1 in geopackage: ", infile))
   }
   
@@ -201,6 +198,7 @@ check_n_nash <- function(){
   
   # Is it NA or NaN?
   if (any(is.na(n_nash)) | any(is.nan(n_nash))) {
+    failed_attrs[[length(failed_attrs) + 1]] <<- "N_nash"
     stop(paste0("NA or NaN found in N_nash_surface in geopackage: ", infile))
   }
   
@@ -209,6 +207,7 @@ check_n_nash <- function(){
   
   # Print the result
   if (!valid_n_nash) {
+    failed_attrs[[length(failed_attrs) + 1]] <<- "N_nash"
     stop(paste0("N_nash_surface values are neither 2 or 5 in geopackage: ", infile))
   }
   
@@ -226,6 +225,7 @@ check_k_nash <- function(){
   
   # Is it NA or NaN?
   if (any(is.na(k_nash)) | any(is.nan(k_nash))) {
+    failed_attrs[[length(failed_attrs) + 1]] <<- "K_nash"
     stop(paste0("NA or NaN found in K_nash_surface in geopackage: ", infile))
   }
 }
@@ -235,13 +235,13 @@ check_k_nash <- function(){
 start_time <- Sys.time()
 
 # Extract the list of basins we have gpkgs for
-basins <- list.files(glue('/Users/laurenbolotin/Lauren/benchmark/benchmark2.0_final/output'))
+basins <- list.files(output_dir)
+
 # Remove anything that's not numeric
 basins <- basins[str_detect(basins, "^[0-9]+$")]
 
 # Run QA/QC Functions ---------------------------------------------------------
-
-basin <- "05061000" # for testing a specific basin
+# basin <- "11147500" # for testing a specific basin
 
 # Create an empty list to append basins with QA/QC issues to 
 failed_cats <- list()
@@ -252,7 +252,7 @@ for (basin in basins) {
   tryCatch({
     # Read the geopackage -------------------
     # infile <- glue('{output_dir}/new_dem/{basin}/data/gage_{basin}.gpkg')
-    infile <- glue('/Users/laurenbolotin/Lauren/benchmark/benchmark2.0_final/output/{basin}/data/gage_{basin}.gpkg')
+    infile <- glue('{output_dir}/{basin}/data/gage_{basin}.gpkg')
     print (paste0("Reading geopackage: ", basename(infile)))
     model_attributes <- st_read(infile, layer = "divide-attributes")
     
@@ -274,33 +274,13 @@ for (basin in basins) {
 
 # Extract just the basin ids from failed_cats
 failed_cats <- sapply(failed_cats, function(x) str_extract(x, "[0-9]+"))
-# Make a dataframe with failed_cats and failed_attrs
-failed_df <- data.frame(basin = failed_cats, failed_attrs = failed_attrs)
+# Make a dataframe with failed_cats in one column and failed_attrs in another
+failed_df <- data.frame(basin = failed_cats, failed_attrs = unlist(failed_attrs))
 
-# Do QA/QC Fixes on NWM Attributes --------------------------------------------
-
-# For PR basins, the column names for the model attributes are messed up
-# Overwrite them with the correct names
-# Copy the files to a new directory
-
-for (cat in failed_cats) {
-  # infile <- glue('{output_dir}/new_dem/{cat}/data/gage_{cat}.gpkg')
-  infile <- glue('/Users/laurenbolotin/Lauren/benchmark/benchmark2.0/final_output/output_oCONUS_new_dem_and_fixes/{cat}/data/gage_{cat}.gpkg')
-  print (paste0("Reading geopackage: ", basename(infile)))
-  model_attributes <- read_sf(infile, layer = "divide-attributes")
-
-  # Rename the columns
-  colnames(model_attributes) <- model_attr_names$model_attr_names
-  
-  outfile <- glue('/Users/laurenbolotin/Lauren/benchmark/benchmark2.0/final_output/redo_PR_basins_NWM_attrs/{cat}/data/gage_{cat}.gpkg')
-  # If it doesn't already exist, make the directory for outfile
-  dir.create(dirname(outfile), showWarnings = FALSE, recursive = TRUE)
-  # Write the geopackage back out
-  # st_write(model_attributes, outfile, layer = "divide-attributes", driver = "GPKG")
-  
-  st_write(model_attributes, infile, layer = "divide-attributes", overwrite = TRUE, append = FALSE)
-  
+# Write the dataframe to a csv file only if it is not empty
+if (nrow(failed_df) == 0) {
+  print("No basins failed QA/QC")
+} else {
+  print(glue("Basins failed QA/QC: {failed_df$basin}"))
+  write.csv(failed_df, glue("{output_dir}/failed_basin_attrs.csv"), row.names = FALSE)
 }
-
-
-
