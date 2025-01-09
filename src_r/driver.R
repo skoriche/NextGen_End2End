@@ -288,51 +288,45 @@ run_driver <- function(gage_id = NULL,
   outfile <- " "
   if(!is_gpkg_provided) {
     start.time <- Sys.time()
-    fid = glue('USGS-{gage_id}')
     outfile <- glue('data/gage_{gage_id}.gpkg')
     
-    if (is.null(hf_source)) {
-      # hfsubsetR::get_subset(nldi_feature = list(featureSource="nwissite", featureID=fid),
-      #                       outfile = outfile,
-      #                       gpkg = hf_gpkg_path,
-      #                       hf_version = hf_version,
-      #                       lyrs = c("divides", "flowpaths", "network", "nexus", 
-      #                                "flowpath-attributes", "flowpath-attributes-ml",
-      #                                "divide-attributes"),
-      #                       type = 'nextgen',
-      #                       overwrite = TRUE)
-      # ------
+    # Get domain info for this gage
+    gage_metadata <- suppressMessages(readNWISsite(gage_id)) |> 
+      dplyr::select(state_cd)
+    state_code <- gage_metadata$state_cd
+    state <- stateCd$STUSAB[which(stateCd$STATE == state_code)]
+    if (state %in% c("HI", "AK")) {
+      domain <- tolower(state)
+    } else if (state %in% c("PR", "VI")) {
+      domain <- "prvi"
+    } else {
+      domain <- "conus"
+    }
+
+    # If the gpkg exists, use that for subsetting
+    if (file.exists(hf_gpkg_path)) {
+      print('USING LOCAL GPKG FILE FOR SUBSETTING')
       input = hf_gpkg_path
-      
-      divs = sf::read_sf(input, "divides") 
-      
-      coords = sf::read_sf(glue('https://api.water.usgs.gov/nldi/linked-data/nwissite/USGS-{gage_id}')) |> 
-        sf::st_transform(sf::st_crs(divs))
-      
-      outfile <- glue('data/gage_{gage_id}.gpkg')
-      
-      # int <-  sf::st_as_sf(divs, coords)
-      int <- sf::st_intersection(divs, coords) # can also do st_filter() 
-      
-      hfsubsetR::get_subset(id = int$id,
+      hfsubsetR::get_subset(hl_uri = glue("gages-{gage_id}"),
                             outfile = outfile,
                             gpkg = input,
+                            hf_version = hf_version,
                             lyrs = c("divides", "flowpaths", "network", "nexus",
+                                     "flowpath-attributes",
                                      "divide-attributes"),
+                            type = 'nextgen',
                             overwrite = TRUE)
-    } else {
-      # if local synchronized hydrofabric exists
-      hfsubsetR::get_subset(nldi_feature = list(featureSource="nwissite", featureID=fid),
+    } else { # If the gpkg does not exist, get from lynker-spatial hydrofabric bucket
+      print('USING REMOTE GPKG FILE FOR SUBSETTING')
+      hfsubsetR::get_subset(hl_uri = glue("gages-{gage_id}"),
                             outfile = outfile, 
                             hf_version = hf_version, 
-                            type = 'nextgen',
-                            source = hf_source,
+                            domain = domain,
                             lyrs = c("divides", "flowpaths", "network", "nexus", 
-                                     "flowpath-attributes", "flowpath-attributes-ml",
+                                     "flowpath-attributes",
                                      "divide-attributes"),
                             overwrite = TRUE)
     }
-
     time.taken <- as.numeric(Sys.time() - start.time, units = "secs") #end.time - start.time
     print (paste0("Time (geopackage) = ", time.taken))
     
@@ -460,8 +454,20 @@ run_driver <- function(gage_id = NULL,
   d_attr$width_dist <- twi_dat_values$width_dist  # append width distribution column to the model attributes layer
   d_attr$N_nash_surface <- nash_params_surface$N_nash
   d_attr$K_nash_surface <- nash_params_surface$K_nash
-
+  
   if (!write_attr_parquet) {
+    # print('PRINTING MODEL ATTR NAMES')
+    # print(names(d_attr))
+    # model_attr_names <<- read.table(glue("{workflow_dir}/configs/basefiles/model_attribute_names.txt"),
+    #                                 header = TRUE)
+    # print('successfully read in model attr names example')
+    # print(model_attr_names$model_attr_names)
+    # 
+    # # Overwrite the names in d_attr with model_attr_names$model_attr_names
+    # names(d_attr) <- model_attr_names$model_attr_names
+    # print('successfully renamed model attr names')
+    # print(names(d_attr))
+    # print(names(d_attr) == model_attr_names$model_attr_names)
     sf::st_write(d_attr, outfile,layer = "divide-attributes", append = FALSE)  
   }
   else {
