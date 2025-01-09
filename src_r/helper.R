@@ -28,9 +28,14 @@ dem_function <- function(div_infile,
   }
   
   # Buffer because we want to guarantee we don not have boundary issues when processing the DEM
-  div_bf <- st_buffer(div,dist=5000) # didn't use this for the one AK basin
-  
-  dem <- crop(elev, project(vect(div_bf), crs(elev)), snap = "out") # cropped the one AK basin to div, not div_bf
+  tryCatch({
+    div_bf <<- st_buffer(div,dist=5000) # didn't use this for the one AK basin
+    dem <<- crop(elev, project(vect(div_bf), crs(elev)), snap = "out") 
+  }, error = function(e) {
+    cat ("Failed to create DEM buffer; cropping to divides instead\n")
+    dem <<- crop(elev, project(vect(div), crs(elev)), snap = "out") # cropped the one AK basin to div, not div_bf
+    cat ("Successfully cropped DEM to divides\n")
+  })
 
   if (grepl("dem.vrt", dem_input_file)) { # If using the original DEM, need to convert units
     cm_to_m <- 0.01
