@@ -4,7 +4,7 @@
 # Schematic of the NextGenSandboxHub workflow
 
 <div align="center">
-<img src="https://github.com/user-attachments/assets/f779825c-1ee9-45e1-82e4-8589683902bb" style="width:700px; height:600px;"/>
+<img src="https://github.com/user-attachments/assets/d06b3cf9-6019-4ebd-86f1-e797b4debbae" style="width:800px; height:400px;"/>
 </div>
 
 ### Running the NextGenSandboxHub workflow
