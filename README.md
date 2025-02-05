@@ -16,11 +16,15 @@ Note: The workflow assumes that [ngen](https://github.com/NOAA-OWP/ngen) and oth
   - `pip install 'extern/ngen-cal/python/ngen_cal[netcdf]'`
   - `pip install -e ./extern/ngen_cal_plugins`
     
-#### Hydrofabric installation
+#### Hydrofabric installation & Subsetting
 Install [hydrofabric](https://github.com/NOAA-OWP/hydrofabric) and related packages (assumes R and Rtools are already installed)
   - Download domain (CONUS or oCONUS) from [lynker-spatial](https://www.lynker-spatial.com/data?path=hydrofabric%2Fv2.2%2F), for instance conus/conus_nextgen.gpkg
   - open configs/config_workflow.yaml [here](configs/config_workflow.yaml) and adjust workflow_dir, input_dir, output_dir, and gpkg_model_params according to your local settings
-  - python main.py -gpkg (or open src_r/main.R in RStudio and set infile_config [here](https://github.com/ajkhattak/basin_workflow/blob/nwm-v4-bm/src_r/main.R#L54) and run main.R. This will install the hydrofabric and several other libraries, and if everything goes well, a basin geopackage will be subsetted and stored under `<output_dir>/<basin_id>/data/gage_<basin_id>.gpkg`
+  - Now there are two options to proceed:
+      - run `python main.py -gpkg`
+      - or open src_r/main.R in RStudio and set file name `infile_config` [here](https://github.com/ajkhattak/basin_workflow/blob/nwm-v4-bm/src_r/main.R#L54) and source on main.R
+    
+    Either one will install the hydrofabric and several other libraries, and if everything goes well, a basin geopackage will be subsetted and stored under `<input_dir>/<basin_id>/data/gage_<basin_id>.gpkg`
     
 #### Forcing data
 The workflow uses [CIROH_DL_NextGen](https://github.com/ajkhattak/CIROH_DL_NextGen) forcing_prep tool to donwload atmospheric forcing data.
