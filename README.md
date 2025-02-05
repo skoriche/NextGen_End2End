@@ -12,7 +12,7 @@ Note: The workflow assumes that [ngen](https://github.com/NOAA-OWP/ngen) and oth
 #### Workflow setup
   - `git clone https://github.com/ajkhattak/NextGenSandboxHub && cd NextGenSandboxHub`
   - `git submodule update --init`
-  - `source <path_to_venv>/.venv_ngen/bin/activate`
+  - `source <path_to_venv>/.venv_ngen/bin/activate` (Assuming the Python environment named `.venv_ngen` exists and ngen was built within this environment)
   - `pip install 'extern/ngen-cal/python/ngen_cal[netcdf]'`
   - `pip install -e ./extern/ngen_cal_plugins`
     
