@@ -53,7 +53,7 @@ The workflow uses [CIROH_DL_NextGen](https://github.com/ajkhattak/CIROH_DL_NextG
     python <path_to_sandboxhub>/main.py -forc
     ```
     
-### <ins> Step 4. NGEN-CAL and Plugins Installation
+### <ins> Step 5. NGEN-CAL and Plugins Installation
   - Activate the Python Virtual Environment (Ensure .venv_ngen exists and ngen was built within this environment):
     ```
     source <path_to_venv>/.venv_ngen/bin/activate
@@ -67,13 +67,13 @@ The workflow uses [CIROH_DL_NextGen](https://github.com/ajkhattak/CIROH_DL_NextG
     pip install -e ./extern/ngen_cal_plugins
     ```
     
-### <ins>  Step 5 Generate Configuration and Realization Files
+### <ins>  Step 6. Generate Configuration and Realization Files
 To generate configuratioin and realization files, setup the `formulation` block in the workflow config file [here](configs/config_workflow.yaml), and run the following command:
  ```
     python <path_to_sandboxhub>/main.py -conf
  ```
 
-### <ins> Run Calibration/Validation Simulations
+### <ins> Step 7. Run Calibration/Validation Simulations
 Setup the `ngen_cal` block in the workflow config file [here](configs/config_workflow.yaml), and run the following command, note this depends on all of the above steps:
  ```
     python <path_to_sandboxhub>/main.py -run
