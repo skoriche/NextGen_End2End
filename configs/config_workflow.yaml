@@ -37,8 +37,7 @@ gpkg_model_params :
 
 forcings: 
   forcing_format     : ".nc" 
-  forcing_venv_dir   : "/Users/laurenbolotin/.venv_forcing/" # provide only when using forcing data downloaders
-  forcing_dir        : "/Users/laurenbolotin/Lauren/benchmark/benchmark2.0_final/{*}/data/forcing/2016_to_2024/" # start year and end year +1 ; Before the asterisk should be the same as your output directory abov
+  forcing_venv_dir   : "/Users/ahmadjan/.ngen_forcing/" # provide only when using forcing data downloaders
   forcing_time       : '{"start_time" : "2016-10-01 00:00:00", "end_time" : "2023-09-30 23:00:00"}' 
 
 formulation :

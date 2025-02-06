@@ -27,7 +27,7 @@ verbosity           = dsim.get('verbosity', 0)
 num_processors_forcing  = dsim.get("num_processors", 1)
 
 dforcing = d['forcings']
-forcing_dir      = dforcing.get("forcing_dir", "")
+forcing_dir      = dforcing.get("forcing_dir", "None")
 forcing_time     = dforcing["forcing_time"]
 forcing_format   = dforcing.get('forcing_format', '.nc')
 forcing_venv_dir = dforcing.get('forcing_venv_dir', "~/venv_forcing")
@@ -36,8 +36,13 @@ output_dir.mkdir(parents=True, exist_ok=True)
 
 # fix missing data points (NaNs) and APCP_surface units
 def forcing_data_correction(fdir):
-
+    
     nc_file = glob.glob(f"{fdir}/*.nc")
+    
+    if (len(nc_file) != 1):
+        print ("Can't correct the forcing data, either file does not exist or more than one files exist. Files found: ", nc_file)
+        return
+    
     nc_file = [f for f in nc_file if not "_corrected" in f][0]
 
     ds = xr.open_dataset(nc_file)
@@ -76,12 +81,15 @@ def forcing_generate_catchment(dir):
         fdir = Path(forcing_dir.replace("{*}", Path(dir).name))
 
     config_dir = os.path.join(dir,"configs")
-    forcing_config = configuration.write_forcing_input_files(forcing_basefile = infile,
-                                                             gpkg_file        = gpkg_file,
-                                                             forcing_time     = forcing_time,
-                                                             forcing_format   = forcing_format,
-                                                             forcing_dir      = fdir)
+    forcing_config, fout_dir = configuration.write_forcing_input_files(forcing_basefile = infile,
+                                                                       gpkg_file        = gpkg_file,
+                                                                       forcing_time     = forcing_time,
+                                                                       forcing_format   = forcing_format,
+                                                                       forcing_dir      = fdir)
 
+    if (not Path(fdir).is_dir()):
+        fdir = fout_dir
+        
     run_cmd = f'python {workflow_dir}/extern/CIROH_DL_NextGen/forcing_prep/generate.py {forcing_config}'
 
     venv_bin = os.path.join(forcing_venv_dir, 'bin')
@@ -134,6 +142,6 @@ if __name__ == "__main__":
     ]
 
 
-    output_dirs = [output_dir / Path(g).name for g in gpkg_dirs ]
+    #output_dirs = [output_dir / Path(g).name for g in gpkg_dirs ]
 
     forcing(nproc = num_processors_forcing)
