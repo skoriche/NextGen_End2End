@@ -6,7 +6,7 @@
 
 workflow_dir  : "/Users/ahmadjan/codes/workflows/NextGenSandboxHub"
 input_dir   : "/Users/ahmadjan/Core/projects/testing/input"
-output_dir    : "/Users/ahmadjan/Core/projects/output"
+output_dir    : "/Users/ahmadjan/Core/projects/testing/output"
 
 
 
@@ -38,6 +38,7 @@ gpkg_model_params :
 forcings: 
   forcing_format     : ".nc" 
   forcing_venv_dir   : "/Users/ahmadjan/.ngen_forcing/" # provide only when using forcing data downloaders
+  forcing_dir        : "/Users/ahmadjan/Core/projects/testing/input/{*}/data/forcing/2016_to_2024/" # start year and end year +1 ; Before the asterisk should be the same as your input_dir above
   forcing_time       : '{"start_time" : "2016-10-01 00:00:00", "end_time" : "2023-09-30 23:00:00"}' 
 
 formulation :
@@ -54,7 +55,7 @@ formulation :
 
   np_per_basin               : 1         # number of processors for basin partitioning
   np_per_basin_adaptive      : False     # adaptive - set by the workflow
-  basins_in_par              : 2         # use for both config files and simulations
+  basins_in_par              : 1         # use for both config files and simulations
 
   rename_existing_simulation : ""
 

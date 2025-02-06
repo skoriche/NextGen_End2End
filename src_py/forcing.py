@@ -81,14 +81,12 @@ def forcing_generate_catchment(dir):
         fdir = Path(forcing_dir.replace("{*}", Path(dir).name))
 
     config_dir = os.path.join(dir,"configs")
-    forcing_config, fout_dir = configuration.write_forcing_input_files(forcing_basefile = infile,
-                                                                       gpkg_file        = gpkg_file,
-                                                                       forcing_time     = forcing_time,
-                                                                       forcing_format   = forcing_format,
-                                                                       forcing_dir      = fdir)
+    forcing_config = configuration.write_forcing_input_files(forcing_basefile = infile,
+                                                             gpkg_file        = gpkg_file,
+                                                             forcing_time     = forcing_time,
+                                                             forcing_format   = forcing_format,
+                                                             forcing_dir      = fdir)
 
-    if (not Path(fdir).is_dir()):
-        fdir = fout_dir
         
     run_cmd = f'python {workflow_dir}/extern/CIROH_DL_NextGen/forcing_prep/generate.py {forcing_config}'
 
