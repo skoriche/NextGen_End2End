@@ -1,5 +1,5 @@
 ######################### INSTALL REQUIRED PACKAGES ############################
-# STEP #1: The packages need to run the workflow
+# STEP #1: The packages need to run Hydrofabric tools for subsetting basins
 ################################################################################
 
 if (Sys.info()['sysname'] == "Windows") {
@@ -19,10 +19,10 @@ suppressPackageStartupMessages({
   library(devtools)
 })
 
-if(!requireNamespace("hydrofabric3D", quietly=TRUE) || reinstall_hydrofabric)
+if(!requireNamespace("hydrofabric3D", quietly=TRUE))
   devtools::install_github("mikejohnson51/hydrofabric3D")
 
-if(!requireNamespace("hydrofabric", quietly=TRUE) || reinstall_hydrofabric) {
+if(!requireNamespace("hydrofabric", quietly=TRUE)) {
   #devtools::install_github("noaa-owp/hydrofabric", ref = 'b07c109', force = TRUE)
   devtools::install_github("noaa-owp/hydrofabric", force = TRUE)
 }
@@ -76,7 +76,7 @@ if(!requireNamespace("dataRetrieval", quietly=TRUE))
   install.packages("dataRetrieval")
 
 # install arrow package from source, if any conflicts/errors happen due to arrow package
-if(!requireNamespace("arrow", quietly=TRUE) || reinstall_arrow) {
+if(!requireNamespace("arrow", quietly=TRUE)) {
   # 1
   #Sys.setenv("NOT_CRAN" = "true")
   #Sys.setenv(LIBARROW_BINARY = TRUE)
