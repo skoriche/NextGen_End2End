@@ -51,11 +51,12 @@ setup <-function() {
   } else if (length(args) > 1) {
     stop("Please provide only one argument (input.yaml).")
   } else {
-    infile_config <- "/Users/laurenbolotin/Lauren/basin_workflow/configs/config_workflow.yaml"
+    infile_config <- "<path_to_sandboxhub>/configs/config_workflow.yaml"
   } 
 
   if (!file.exists(infile_config)) {
     print(paste0("input config file does not exist, provided: ", infile_config))
+    print ("Note: if running from RStudio, make sure infile_config points is set propely (line 54 in the main.R).")
     return(1)
   }
   
@@ -66,10 +67,8 @@ setup <-function() {
   hf_source         <<- inputs$gpkg_model_params$hf_source
   hf_version        <<- inputs$gpkg_model_params$hf_version
   hf_gpkg_path     <<- inputs$gpkg_model_params$hf_gpkg_path
-  reinstall_arrow   <<- inputs$gpkg_model_params$reinstall_arrow
   nproc             <<- inputs$gpkg_model_params$number_processors
-  reinstall_hydrofabric <<- inputs$gpkg_model_params$reinstall_hydrofabric
-  write_attr_parquet    <<- inputs$gpkg_model_params$write_attributes_parquet
+  write_attr_parquet    <<- FALSE # clean it later AJK
 
   source(paste0(workflow_dir, "/src_r/install_load_libs.R"))
   source(glue("{workflow_dir}/src_r/custom_functions.R"))
