@@ -1008,14 +1008,14 @@ def write_forcing_input_files(forcing_basefile, gpkg_file, forcing_time, forcing
     d["years"] = [start_yr, end_yr]
     d["out_dir"] = os.path.join(os.path.dirname(gpkg_file), "forcing")
 
-    # check that out_dir and forcing_dir are consisten
+    # check that out_dir and forcing_dir are consistent
     out_dir = Path(d['out_dir']) / f'{start_yr}_to_{end_yr}'
     
     # Check if the two directory paths are identical
     are_identical = out_dir.resolve() == Path(forcing_dir).resolve()
     
     # Output the result
-    if not are_identical:
+    if not are_identical and Path(forcing_dir).is_dir():
         raise RuntimeError(f"Directory mismatch: out_dir={out_dir} is not the same as forcing_dir={forcing_dir}.")
     
     if (not os.path.exists(d["out_dir"])):
@@ -1027,7 +1027,7 @@ def write_forcing_input_files(forcing_basefile, gpkg_file, forcing_time, forcing
     with open(os.path.join(d["out_dir"],"config_forcing.yaml"), 'w') as file:
         yaml.dump(d,file, default_flow_style=False, sort_keys=False)
 
-    return os.path.join(d["out_dir"],"config_forcing.yaml")
+    return os.path.join(d["out_dir"],"config_forcing.yaml"), out_dir
 
 #############################################################################
 #############################################################################
