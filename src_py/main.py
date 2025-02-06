@@ -106,7 +106,7 @@ schema_type                = dformul.get('schema_type', "noaa-owp")
 
 
 dforcing = d['forcings']
-forcing_dir      = dforcing.get("forcing_dir", "")
+forcing_dir      = dforcing.get("forcing_dir", "None")
 forcing_format   = dforcing.get('forcing_format', '.nc')
 
 is_netcdf_forcing = True

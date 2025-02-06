@@ -57,7 +57,7 @@ def get_soil_class_NWM(infile):
 def read_gpkg_file(infile, coupled_models, surface_runoff_scheme, verbosity, schema_type='noaa-owp'):
     
     try:
-        gdf_soil = gpd.read_file(infile, layer='model-attributes')
+        gdf_soil = gpd.read_file(infile, layer='divide-attributes')
     except:
         try:
             gdf_soil = gpd.read_file(infile, layer='model_attributes')
@@ -1015,7 +1015,7 @@ def write_forcing_input_files(forcing_basefile, gpkg_file, forcing_time, forcing
     are_identical = out_dir.resolve() == Path(forcing_dir).resolve()
     
     # Output the result
-    if not are_identical and Path(forcing_dir).is_dir():
+    if not are_identical:
         raise RuntimeError(f"Directory mismatch: out_dir={out_dir} is not the same as forcing_dir={forcing_dir}.")
     
     if (not os.path.exists(d["out_dir"])):
@@ -1027,7 +1027,7 @@ def write_forcing_input_files(forcing_basefile, gpkg_file, forcing_time, forcing
     with open(os.path.join(d["out_dir"],"config_forcing.yaml"), 'w') as file:
         yaml.dump(d,file, default_flow_style=False, sort_keys=False)
 
-    return os.path.join(d["out_dir"],"config_forcing.yaml"), out_dir
+    return os.path.join(d["out_dir"],"config_forcing.yaml")
 
 #############################################################################
 #############################################################################
