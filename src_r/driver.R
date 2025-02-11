@@ -306,10 +306,10 @@ run_driver <- function(gage_id = NULL,
     # If the gpkg exists, use that for subsetting
     if (file.exists(hf_gpkg_path)) {
       print('USING LOCAL GPKG FILE FOR SUBSETTING')
-      input = hf_gpkg_path
+      
       hfsubsetR::get_subset(hl_uri = glue("gages-{gage_id}"),
                             outfile = outfile,
-                            gpkg = input,
+                            gpkg = hf_gpkg_path,
                             hf_version = hf_version,
                             lyrs = c("divides", "flowpaths", "network", "nexus",
                                      "flowpath-attributes",

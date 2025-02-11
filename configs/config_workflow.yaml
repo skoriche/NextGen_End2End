@@ -38,8 +38,8 @@ gpkg_model_params :
 forcings: 
   forcing_format     : ".nc" 
   forcing_venv_dir   : "/Users/ahmadjan/.ngen_forcing/" # provide only when using forcing data downloaders
-  forcing_dir        : "/Users/ahmadjan/Core/projects/testing/input/{*}/data/forcing/2016_to_2024/" # start year and end year +1 ; Before the asterisk should be the same as your input_dir above
-  forcing_time       : '{"start_time" : "2016-10-01 00:00:00", "end_time" : "2023-09-30 23:00:00"}' 
+  forcing_dir        : "/Users/ahmadjan/Core/projects/testing/input/{*}/data/forcing/2010_to_2011/" # start year and end year +1 ; Before the asterisk should be the same as your input_dir above
+  forcing_time       : '{"start_time" : "2010-10-01 00:00:00", "end_time" : "2010-09-30 23:00:00"}' 
 
 formulation :
   ngen_dir           : "/Users/ahmadjan/codes/ngen/ngen"
@@ -62,7 +62,7 @@ formulation :
 ngen_cal :
   task_type        : "calibvalid"  #calibration #, validation, restart, None
   calibration_time : '{"start_time" : "2010-10-01 00:00:00", "end_time" : "2010-10-30 23:00:00"}'
-  calib_eval_time  : '{"start_time" : "2010-10-05 00:00:00", "end_time" : "2010-10-23 02:00:00"}'
+  calib_eval_time  : '{"start_time" : "2010-10-05 00:00:00", "end_time" : "2010-10-30 23:00:00"}'
   validation_time  : '{"start_time" : "2010-11-22 14:00:00", "end_time" : "2010-12-23 02:00:00"}'
   valid_eval_time  : '{"start_time" : "2010-11-23 14:00:00", "end_time" : "2010-12-23 02:00:00"}'
   restart_dir      : "/Users/ahmadjan/Core/SimulationsData/projects/test_basins/{*}/202410042024_ngen_qaiklwj0_worker/"

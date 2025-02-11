@@ -62,7 +62,7 @@ def read_gpkg_file(infile, coupled_models, surface_runoff_scheme, verbosity, sch
         try:
             gdf_soil = gpd.read_file(infile, layer='model_attributes')
         except:
-            print("layer 'model-attributes or model_attributes does not exist!'")
+            print("layer 'divide-attributes or model_attributes does not exist!'")
             sys.exit(1)
     
     gdf_soil.set_index("divide_id", inplace=True)
@@ -1096,7 +1096,7 @@ def main():
                                           args.verbosity,
                                           schema_type=args.schema)
     except:
-        print("Couldn't read geopackage file for model-attributes successfully..")
+        print("Couldn't read geopackage file for divide-attributes successfully..")
         sys.exit(1)        
     # doing it outside NOM as some of params from this file are also needed by CFE for Xinanjiang runoff scheme
     nom_params = os.path.join(args.ngen_dir,"extern/noah-owp-modular/noah-owp-modular/parameters")
