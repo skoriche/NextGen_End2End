@@ -1,9 +1,54 @@
 #!/usr/bin/bash
 
-export PATH=/usr/lib64/openmpi/bin:$PATH
-export LD_LIBRARY_PATH=/usr/lib64/openmpi/lib/:$LD_LIBRARY_PATH
 ###############################################################
-BUILD_HDF5=ON
+# Created by Ahmad Jan Khattak (and modified by Sifan AK December 18, 2024 [sakoriche@ua.edu])
+# The script idea and some of the contents were taken from Nels Frazier's benchmarking work
+# 1st Install dependecies 
+# 2nd Add environment paths and libraies to the .bash_profile
+# 3rd build the libraries one by one as shown in the order below
+###############################################################
+
+###############################################################
+# Install required packages, -y to "yes" all prompts
+BUILD_DEPS=OFF
+DEPS="git gcc gfortran g++ openmpi openmpi-devel libxml2 libxml2-devel m4 libcurl-devel python3.11 python3.11-devel cmake boost sqlite-libs sqlite-devel expat expat-devel flex bison libtiff libtiff-devel"
+
+if [ "$BUILD_DEPS" == "ON" ]; then
+    echo "DEPS build: ${BUILD_DEPS}"
+    sudo dnf install -y $DEPS
+fi
+###############################################################
+
+
+#### Add the following to your .bash_profile  after downloading dependencies #####
+
+## Define Boost root (if needed by your application)
+#export BOOST_ROOT=~/boost
+
+## Set paths for OpenMPI
+#export PATH=/usr/lib64/openmpi/bin:$PATH
+
+## Set compilers for MPI and Fortran
+#export CC=/usr/lib64/openmpi/bin/mpicc
+#export CXX=/usr/lib64/openmpi/bin/mpicxx
+#export FC=/usr/bin/gfortran
+#export F90=${FC}  # Alias for Fortran compiler
+
+## Set paths for NetCDF
+#export NETCDFINC="/usr/local/include"
+#export NETCDFLIB="/usr/local/lib"
+#export CFLAGS="-I${NETCDFINC}"
+#export LDFLAGS="-L${NETCDFLIB} -lnetcdf -lnetcdff"
+
+## Consolidate LD_LIBRARY_PATH
+#export LD_LIBRARY_PATH=/usr/local/lib64:/usr/lib64/openmpi/lib:/usr/local/lib:$BOOST_ROOT/lib:$LD_LIBRARY_PATH
+
+#source ~/.vevn_ngen_py3.11/bin/activate
+###############################################################
+
+
+
+BUILD_HDF5=OFF
 build_hdf5()
 {
     pushd /tmp
@@ -19,8 +64,9 @@ if [ "$BUILD_HDF5" == "ON" ]; then
     build_hdf5
 fi
 
+
 ###############################################################
-BUILD_NETCDF=ON
+BUILD_NETCDF=OFF
 build_netcdf()
 {
     #NOTE CPPFLAGS below in netcdf configure step must point to mpi.h containing dir!!!
@@ -43,8 +89,9 @@ if [ "$BUILD_NETCDF" == "ON" ]; then
 fi
 # try to find locaiton of netcdf which nc-config
 
+
 ###############################################################
-BUILD_NETCDF_FORT=ON
+BUILD_NETCDF_FORT=OFF
 build_netcdf_fortran()
 {
     pushd /tmp 
@@ -70,8 +117,9 @@ if [ "$BUILD_NETCDF_FORT" == "ON" ]; then
 fi
 # try 'which nf-config' to locate it
 
+
 ###############################################################
-BUILD_PROJ=ON
+BUILD_PROJ=OFF
 build_proj()
 {
     pushd /tmp
@@ -89,8 +137,9 @@ if [ "$BUILD_PROJ" == "ON" ]; then
     build_proj
 fi
 
+
 ###############################################################
-BUILD_GDAL=ON
+BUILD_GDAL=OFF
 build_gdal()
 {
     pushd /tmp
@@ -113,7 +162,7 @@ fi
 
 
 ###############################################################
-GET_BOOST=ON
+GET_BOOST=OFF
 get_boost()
 {
     BOOST_VERSION=1.82.0
@@ -130,8 +179,9 @@ if [ "$GET_BOOST" == "ON" ]; then
 fi
 export BOOST_ROOT=~/boost
 
+
 ###############################################################
-BUILD_UDUNITS=ON
+BUILD_UDUNITS=OFF
 build_udunits()
 {
     pushd /tmp
@@ -156,9 +206,10 @@ if [ "$BUILD_UDUNITS" == "ON" ]; then
     build_udunits
 fi
 
+
 ###############################################################
 #Geos isn't a ngen dependency, but is for the forcing processing used in this calibraiton...
-BUILD_GEOS=ON
+BUILD_GEOS=OFF
 build_geos()
 {
     pushd /tmp
@@ -176,11 +227,4 @@ if [ "$BUILD_GEOS" == "ON" ]; then
 fi
 
 ###############################################################
-# Install required packages, -y to "yes" all prompts
-BUILD_DEPS=ON
-DEPS="git gcc gfortran g++ openmpi openmpi-devel libxml2 libxml2-devel m4 libcurl-devel python3 python3-devel cmake boost sqlite-libs sqlite-devel expat expat-devel flex bison libtiff libtiff-devel"
 
-if [ "$BUILD_DEPS" == "ON" ]; then
-    echo "DEPS build: ${BUILD_DEPS}"
-    sudo dnf install -y $DEPS
-fi
