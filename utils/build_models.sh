@@ -9,16 +9,35 @@ export builddir="cmake_build"
 
 cd ${wkdir}
 
+# Step 1. Clone NextGenSandboxHub repo
+# git clone https://github.com/ajkhattak/NextGenSandboxHub && cd NextGenSandboxHub
 
-# Set Options
+#####################################################
+# Step 2.
+# Set Options and the following dir paths
+
 BUILD_NGEN=OFF
 BUILD_TROUTE=OFF
 BUILD_MODELS=OFF
 BUILD_WORKFLOW=ON
 
+ngen_dir=<path_to_ngen>
+sandboxhub_dir=<path_to_sandboxhub>
+
+# Notes:
+# 1. If ngen has already been clone and submodules updated
+#    comment out the 2 lines below pushd $ngen_dir in the build_ngen block
+# 2. If vevn_forcing failed or forcing downloader is failing, that could be due to inconsistent
+#    versions of packages, try buidling env based on doc/env/venv_forcing.piplist
+#    
+#####################################################
+
 build_ngen()
 {
-    #git submodule update --init --recursive
+    pushd $ngen_dir
+    git clone https://github.com/NOAA-OWP/ngen && cd ngen
+    git submodule update --init --recursive
+    
     rm -rf ${builddir}
     cmake -DCMAKE_BUILD_TYPE=Release \
 	  -DNGEN_WITH_BMI_FORTRAN=ON \
@@ -37,12 +56,13 @@ build_ngen()
     # run the following if ran into tests timeout issues
     #cmake -j4 --build cmake_build --target ngen
     #cmake --build cmake_build --tartget ngen -j8
+    popd
 }
 
 
 build_troute()
 {
-    pushd extern/t-route
+    pushd $ngen_dir/extern/t-route
     git checkout master
     git pull master
 
@@ -60,6 +80,8 @@ build_troute()
 
 build_models()
 {
+    pushd $ngen_dir
+
     for model in cfe evapotranspiration SoilFreezeThaw SoilMoistureProfiles LGAR; do
 	rm -rf extern/$model/${builddir}
 	if [ "$model" == "cfe" ] || [ "$model" == "SoilFreezeThaw" ] || [ "$model" == "SoilMoistureProfiles" ]; then
@@ -79,12 +101,14 @@ build_models()
 	    make -C extern/${model}/${model}/${builddir}
 	fi
     done
+
+    popd
 }
 
 build_workflow()
 {
-    git clone https://github.com/ajkhattak/basin_workflow /home/ec2-user/codes/workflows/basin_workflow
-    cd /home/ec2-user/codes/workflows/basin_workflow
+    pushd $sandboxhub_dir
+    
     git submodule update --init
     git submodule update --remote extern/ngen-cal
     git submodule update --remote extern/CIROH_DL_NextGen
@@ -99,6 +123,8 @@ build_workflow()
     source ~/venv_forcing/bin/activate
     pip install -U pip==24.0
     pip install -r extern/CIROH_DL_NextGen/forcing_prep/requirements.txt
+
+    popd
 }
 
 
