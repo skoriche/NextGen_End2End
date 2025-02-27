@@ -64,7 +64,7 @@ build_troute()
 {
     pushd $ngen_dir/extern/t-route
     git checkout master
-    git pull master
+    git pull
 
     mkdir ~/ngen_venv_pip24
     python3.11 -m venv ~/ngen_venv_pip24
