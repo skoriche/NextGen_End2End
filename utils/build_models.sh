@@ -66,8 +66,8 @@ build_troute()
     git checkout master
     git pull
 
-    mkdir ~/ngen_venv_pip24
-    python3.11 -m venv ~/ngen_venv_pip24
+    mkdir ~/vevn_ngen_py3.11
+    python3.11 -m venv ~/vevn_ngen_py3.11
     source ~/vevn_ngen_py3.11/bin/activate
     pip install -U pip==24.0
     sed -i 's/netcdf4/netcdf4<=1.6.3/g' extern/t-route/requirements.txt
