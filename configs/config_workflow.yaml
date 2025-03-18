@@ -9,8 +9,8 @@ input_dir   : "/Users/ahmadjan/Core/projects/testing/input"
 output_dir    : "/Users/ahmadjan/Core/projects/testing/output"
 
 
-
-gpkg_model_params :
+# to subset a location using hydrofabric
+subsetting :
   hf_version               : "2.2" # Only enter version number, e.g. "2.2" or "2.1.1"
   # Ensure that this gpkg matches the hf_version specified above:
   hf_gpkg_path             : "/Users/ahmadjan/Core/projects/hf2.2_gpkgs/conus_nextgen.gpkg" 
@@ -44,10 +44,8 @@ forcings:
 formulation :
   ngen_dir           : "/Users/ahmadjan/codes/ngen/ngen"
   
-  models                     : "PET_CFE"
-  precip_partitioning_scheme : 'Schaake'
+  models                     : "PET, CFE-S, T-route"
   surface_runoff_scheme      : 'NASH_CASCADE' # 'GIUH' for cfe1.0
-  is_routing                 : True
 
   clean                      : ['existing']
   setup_simulation           : True
@@ -57,10 +55,9 @@ formulation :
   np_per_basin_adaptive      : False     # adaptive - set by the workflow
   basins_in_par              : 1         # use for both config files and simulations
 
-  rename_existing_simulation : ""
-
-ngen_cal :
-  task_type        : "calibvalid"  #calibration #, validation, restart, None
+simulation :
+  task_type : "validation"
+  #task_type        : "calibvalid"  #calibration #, validation, restart, None
   calibration_time : '{"start_time" : "2010-10-01 00:00:00", "end_time" : "2010-10-30 23:00:00"}'
   calib_eval_time  : '{"start_time" : "2010-10-05 00:00:00", "end_time" : "2010-10-30 23:00:00"}'
   validation_time  : '{"start_time" : "2010-11-22 14:00:00", "end_time" : "2010-12-23 02:00:00"}'

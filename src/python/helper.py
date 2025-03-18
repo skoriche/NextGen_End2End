@@ -1,6 +1,10 @@
 import os
 import shutil
 
+class colors:
+    GREEN = '\033[92m'
+    RED   = '\033[91m'
+    END   = '\033[0m'
 
 def create_clean_dirs(output_dir,
                       setup_simulation = True,
