@@ -3,234 +3,221 @@
 # Contact : ahmad.jan@noaa.gov
 # Date    : July 5, 2024
 ############################################################################################
-import os, sys
+
+
+import os
+import sys
 import pandas as pd
 import subprocess
 import glob
 import yaml
 import multiprocessing
 import platform
-from src_py import configuration
 import json
 from pathlib import Path
+from src_py import configuration
 
-os_name = platform.system()
-workflow_infile   = sys.argv[1]
-ngen_cal_basefile = sys.argv[2]
+class SandboxRunner:
+    def __init__(self, config_workflow, config_calib):
+        self.os_name = platform.system()
+        self.config_workflow = config_workflow
+        self.config_calib = config_calib
+        self.load_configuration()
 
-with open(workflow_infile, 'r') as file:
-    d = yaml.safe_load(file)
+        if self.np_per_basin > 1 and not os.path.exists(f"{self.ngen_dir}/cmake_build/partitionGenerator"):
+            sys.exit("Partitioning geopackage is requested but partitionGenerator does not exist! Quitting...")
 
-workflow_dir     = d["workflow_dir"]
-input_dir        = d["input_dir"]
-output_dir       = Path(d["output_dir"])
-
-
-dformul = d['formulation']
-ngen_dir        = dformul["ngen_dir"]
-np_per_basin    = int(dformul.get('np_per_basin', 1))
-basins_in_par   = int(dformul.get('basins_in_par', 1))
-np_per_basin_adaptive  = int(dformul.get('np_per_basin_adaptive', True))
-
-
-dcalib = d['ngen_cal']
-ngen_cal_type    = dcalib.get('task_type', None)
-calibration_time = pd.NaT
-validation_time  = pd.NaT
-
-if (ngen_cal_type == 'calibration' or ngen_cal_type == 'calibvalid'):
-    calibration_time  = json.loads(dcalib["calibration_time"])
-    calib_eval_time  = json.loads(dcalib["calib_eval_time"])
-
-if (ngen_cal_type == 'validation' or ngen_cal_type == 'calibvalid'):
-    validation_time  = json.loads(dcalib["validation_time"])
-    valid_eval_time  = json.loads(dcalib["valid_eval_time"])
-
-restart_dir = "./"
-if (ngen_cal_type == 'restart'):
-    restart_dir    = dcalib.get('restart_dir')
-    
-    if restart_dir is None:
-        raise ValueError("ngen_cal_type is restart, however, restart_dir in None. It must be set to a valid directory.")
-
-    if not restart_dir:
-        raise FileNotFoundError(f"restart_dir does not exist, provided {restart_dir}.")
+    def run(self):
+        if self.ngen_cal_type not in ['calibration', 'validation', 'calibvalid', 'restart']:
+            print("Running NextGen without calibration ...")
+            self.run_ngen_without_calibration()
+        else:
+            print(f'Running NextGen with {self.ngen_cal_type}')
+            #self.driver_ngen_with_calibration()
+            infile = os.path.join(self.output_dir, "basins_passed.csv")
+            indata = pd.read_csv(infile, dtype=str)
+            pool = multiprocessing.Pool(processes=self.basins_in_par)
+            tuple_list = list(zip(indata["basin_id"], indata['n_cats']))
+            results = pool.map(self.run_ngen_with_calibration, tuple_list)
+            pool.close()
+            pool.join()
+            print ("Run done")
 
 
+    def load_configuration(self):
+        with open(self.config_workflow, 'r') as file:
+            self.config = yaml.safe_load(file)
 
-def run_ngen_without_calibration():
-    
-    infile = os.path.join(output_dir, "basins_passed.csv")
-    indata = pd.read_csv(infile, dtype=str)
+        self.workflow_dir = self.config["workflow_dir"]
+        self.input_dir = self.config["input_dir"]
+        self.output_dir = Path(self.config["output_dir"])
 
-    ngen_exe = os.path.join(ngen_dir, "cmake_build/ngen")
+        dformul = self.config['formulation']
+        self.ngen_dir = dformul["ngen_dir"]
+        self.np_per_basin = int(dformul.get('np_per_basin', 1))
+        self.basins_in_par = int(dformul.get('basins_in_par', 1))
+        self.np_per_basin_adaptive = int(dformul.get('np_per_basin_adaptive', True))
 
-    
-    for id, ncats in zip(indata["basin_id"], indata['n_cats']):
+        dsim = self.config['simulation']
+        self.ngen_cal_type = dsim.get('task_type', None)
+        self.calibration_time = pd.NaT
+        self.validation_time = pd.NaT
 
+        if self.ngen_cal_type in ['calibration', 'calibvalid']:
+            self.calibration_time = json.loads(dsim["calibration_time"])
+            self.calib_eval_time = json.loads(dsim["calib_eval_time"])
+
+        if self.ngen_cal_type in ['validation', 'calibvalid']:
+            self.validation_time = json.loads(dsim["validation_time"])
+            self.valid_eval_time = json.loads(dsim["valid_eval_time"])
+
+        self.restart_dir = "./"
+        if self.ngen_cal_type == 'restart':
+            self.restart_dir = dsim.get('restart_dir')
+            if self.restart_dir is None:
+                raise ValueError("ngen_cal_type is restart, however, restart_dir is None. It must be set to a valid directory.")
+            if not self.restart_dir:
+                raise FileNotFoundError(f"restart_dir does not exist, provided {self.restart_dir}.")
+    """
+    def driver_ngen_with_calibration(self):
+        infile = os.path.join(self.output_dir, "basins_passed.csv")
+        indata = pd.read_csv(infile, dtype=str)
+        pool = multiprocessing.Pool(processes=self.basins_in_par)
+        tuple_list = list(zip(indata["basin_id"], indata['n_cats']))
+        results = pool.map(self.run_ngen_with_calibration, tuple_list)
+        pool.close()
+        pool.join()
+    """ 
+    def run_ngen_without_calibration(self):
+        infile = os.path.join(self.output_dir, "basins_passed.csv")
+        indata = pd.read_csv(infile, dtype=str)
+        ngen_exe = os.path.join(self.ngen_dir, "cmake_build/ngen")
+
+        for id, ncats in zip(indata["basin_id"], indata['n_cats']):
+            ncats = int(ncats)
+            o_dir = self.output_dir / id
+            i_dir = Path(self.input_dir) / id
+            os.chdir(o_dir)
+            print("cwd: ", os.getcwd())
+            print("input_dir: ", i_dir)
+            print("output_dir: ", o_dir)
+
+            gpkg_file = Path(glob.glob(str(i_dir / "data" / "*.gpkg"))[0])
+            gpkg_name = gpkg_file.stem
+            np_per_basin_local = self.np_per_basin
+            file_par = ""
+            if np_per_basin_local > 1:
+                np_per_basin_local, file_par = self.generate_partition_basin_file(ncats, gpkg_file)
+
+            print(f"Running basin {id} on cores {np_per_basin_local} ********", flush=True)
+            realization = glob.glob("json/realization_*.json")
+            assert len(realization) == 1
+            realization = realization[0]
+
+            run_cmd = f'{ngen_exe} {gpkg_file} all {gpkg_file} all {realization}'
+            if np_per_basin_local > 1:
+                run_cmd = f'mpirun -np {np_per_basin_local} {ngen_exe} {gpkg_file} all {gpkg_file} all {realization} {file_par}'
+
+            if self.os_name == "Darwin":
+                run_cmd = f'PYTHONEXECUTABLE=$(which python) {run_cmd}'
+
+            print(f"Run command: {run_cmd}", flush=True)
+            result = subprocess.call(run_cmd, shell=True)
+
+    def run_ngen_with_calibration(self, basin):
+        id, ncats = basin
         ncats = int(ncats)
-
-        o_dir = output_dir / id
-        i_dir = Path(input_dir) / id
-
+        o_dir = self.output_dir / id
+        i_dir = Path(self.input_dir) / id
         os.chdir(o_dir)
-        print ("cwd: ", os.getcwd())
-        print ("input_dir: ", i_dir)
-        print ("output_dir: ", o_dir)
-
-        
+        print("cwd: ", os.getcwd())
+        print("input_dir: ", i_dir)
+        print("output_dir: ", o_dir)
 
         gpkg_file = Path(glob.glob(str(i_dir / "data" / "*.gpkg"))[0])
         gpkg_name = gpkg_file.stem
-
-        np_per_basin_local = np_per_basin
-
+        np_per_basin_local = self.np_per_basin
         file_par = ""
-        if (np_per_basin_local > 1):
-            np_per_basin_local, file_par = generate_partition_basin_file(ncats, gpkg_file)
-        
-        print ("Running basin %s on cores %s ********"%(id, np_per_basin_local), flush = True)
-        
-        realization = glob.glob("json/realization_*.json")
+        if np_per_basin_local > 1:
+            np_per_basin_local, file_par = self.generate_partition_basin_file(ncats, gpkg_file)
+            file_par = os.path.join(o_dir, file_par)
 
-        assert (len(realization) == 1)
+        print(f"Running basin {id} on cores {np_per_basin_local} ********", flush=True)
 
-        realization = realization[0]
-        
-        if (np_per_basin_local == 1):
-            run_cmd = f'{ngen_exe} {gpkg_file} all {gpkg_file} all {realization}'
-        else:
-            run_cmd = f'mpirun -np {np_per_basin_local} {ngen_exe} {gpkg_file} all {gpkg_file} all {realization} {file_par}'
+        if self.ngen_cal_type in ['calibration', 'calibvalid']:
+            start_time = pd.Timestamp(self.calibration_time['start_time']).strftime("%Y%m%d%H%M")
+            troute_output_file = os.path.join("./troute_output_{}.nc".format(start_time))
 
-        if os_name == "Darwin":
-            run_cmd = f'PYTHONEXECUTABLE=$(which python) {run_cmd}'
-        
-        print (f"Run command: {run_cmd} ", flush = True)
-        result = subprocess.call(run_cmd,shell=True)
-
-
-def run_ngen_with_calibration(basin):
-
-    infile = os.path.join(output_dir, "basins_passed.csv")
-    indata = pd.read_csv(infile, dtype=str)
-
-    id = basin[0]
-    ncats = int(basin[1])
-
-
-    o_dir = output_dir / id
-    i_dir = Path(input_dir) / id
-
-    os.chdir(o_dir)
-    print ("cwd: ", os.getcwd())
-    print ("input_dir: ", i_dir)
-    print ("output_dir: ", o_dir)
-
-
-    gpkg_file = Path(glob.glob(str(i_dir / "data" / "*.gpkg"))[0])
-    gpkg_name = gpkg_file.stem
-    
-    np_per_basin_local = np_per_basin
-    
-    file_par = ""
-    if (np_per_basin_local > 1):
-        np_per_basin_local, file_par = generate_partition_basin_file(ncats, gpkg_file)
-        file_par = os.path.join(o_dir, file_par)
-        
-    print ("Running basin %s on cores %s ********"%(id, np_per_basin_local), flush = True)
-        
-
-    # Calibration call
-    if (ngen_cal_type  == 'calibration' or ngen_cal_type == 'calibvalid'):
-        start_time = pd.Timestamp(calibration_time['start_time']).strftime("%Y%m%d%H%M")
-        
-        #troute_output_file = os.path.join(dir, "outputs/troute", "troute_output_{}.csv".format(start_time))
-        #troute_output_file = os.path.join(dir, "outputs/troute", "flowveldepth_{}.csv".format(gpkg_name))
-        troute_output_file = os.path.join("./troute_output_{}.nc".format(start_time))
+            ConfigGen = configuration.ConfigurationCalib(gpkg_file = gpkg_file,
+                                                        output_dir = o_dir,
+                                                        ngen_dir = self.ngen_dir,
+                                                        realization_file_par = file_par,
+                                                        troute_output_file = troute_output_file,
+                                                        ngen_cal_type='calibration',
+                                                        simulation_time=self.calibration_time,
+                                                        evaluation_time=self.calib_eval_time,
+                                                        ngen_cal_basefile=self.config_calib,
+                                                        restart_dir=self.restart_dir,
+                                                        num_proc=np_per_basin_local)
             
-        configuration.write_calib_input_files(gpkg_file            = gpkg_file,
-                                              ngen_dir             = ngen_dir,
-                                              output_dir           = o_dir,
-                                              realization_file_par = file_par,
-                                              ngen_cal_basefile    = ngen_cal_basefile,
-                                              troute_output_file   = troute_output_file,
-                                              ngen_cal_type        = 'calibration',
-                                              restart_dir          = restart_dir,
-                                              simulation_time      = calibration_time,
-                                              evaluation_time      = calib_eval_time,
-                                              num_proc             = np_per_basin_local)
+            ConfigGen.write_calib_input_files()
+            
+            
+            run_command = "python -m ngen.cal configs/ngen-cal_calib_config.yaml"
+            result = subprocess.call(run_command, shell=True)
 
-        run_command = f"python -m ngen.cal configs/ngen-cal_calib_config.yaml"
-        # .yaml file under cat_id/configs
-        result = subprocess.call(run_command,shell=True)
+        if self.ngen_cal_type in ['validation', 'calibvalid']:
+            print ("XX")
+            start_time = pd.Timestamp(self.validation_time['start_time']).strftime("%Y%m%d%H%M")
+            troute_output_file = os.path.join("./troute_output_{}.nc".format(start_time))
+            ConfigGen = configuration.ConfigurationCalib(gpkg_file = gpkg_file,
+                                                        output_dir = o_dir,
+                                                        ngen_dir = self.ngen_dir,
+                                                        realization_file_par = file_par,
+                                                        troute_output_file = troute_output_file,
+                                                        ngen_cal_type='validation',
+                                                        simulation_time=self.validation_time,
+                                                        evaluation_time=self.valid_eval_time,
+                                                        ngen_cal_basefile=self.config_calib,
+                                                        restart_dir=self.restart_dir,
+                                                        num_proc=np_per_basin_local)
+            
+            ConfigGen.write_calib_input_files()
+            run_command = f"python {self.workflow_dir}/src_py/validation.py configs/ngen-cal_valid_config.yaml"
+            result = subprocess.call(run_command, shell=True)
 
-    # Validation call
-    if (ngen_cal_type  == 'validation' or ngen_cal_type == 'calibvalid'):
-        
-        start_time = pd.Timestamp(validation_time['start_time']).strftime("%Y%m%d%H%M")
-        troute_output_file = os.path.join("./troute_output_{}.nc".format(start_time))
-        
-        configuration.write_calib_input_files(gpkg_file            = gpkg_file,
-                                              ngen_dir             = ngen_dir,
-                                              output_dir           = o_dir,
-                                              realization_file_par = file_par,
-                                              ngen_cal_basefile    = ngen_cal_basefile,
-                                              troute_output_file   = troute_output_file,
-                                              ngen_cal_type        = 'validation',
-                                              restart_dir          = restart_dir,
-                                              simulation_time      = validation_time,
-                                              evaluation_time      = valid_eval_time,
-                                              num_proc             = np_per_basin_local)
-        
-        run_command = f"python {workflow_dir}/src_py/validation.py configs/ngen-cal_valid_config.yaml"
-        # .yaml file under cat_id/configs
-        result = subprocess.call(run_command,shell=True)
-
-def driver_ngen_with_calibration():
-
-    infile = os.path.join(output_dir, "basins_passed.csv")
-    indata = pd.read_csv(infile, dtype=str)
     
-    pool = multiprocessing.Pool(processes=basins_in_par)
 
-    tuple_list = list(zip(indata["basin_id"], indata['n_cats']))
+    def generate_partition_basin_file(self, ncats, gpkg_file):
+        np_per_basin_local = self.np_per_basin
+        json_dir = "json"
 
-    results = pool.map(run_ngen_with_calibration, tuple_list)
+        if ncats <= np_per_basin_local:
+            np_per_basin_local = ncats
+        elif self.np_per_basin_adaptive:
+            np_per_basin_local = min(int(ncats / np_per_basin_local), 20)
 
-    pool.close()
-    pool.join()
+        fpar = " "
+        if np_per_basin_local > 1:
+            fpar = os.path.join(json_dir, f"partition_{np_per_basin_local}.json")
+            partition = f"{self.ngen_dir}/cmake_build/partitionGenerator {gpkg_file} {gpkg_file} {fpar} {np_per_basin_local} \"\" \"\" "
+            result = subprocess.call(partition, shell=True)
 
-
-#####################################################################
-def generate_partition_basin_file(ncats, gpkg_file):
-
-    np_per_basin_local = np_per_basin
-    json_dir   = "json"
-
-    if (ncats <= np_per_basin_local):
-        np_per_basin_local = ncats
-    elif(np_per_basin_adaptive):
-        np_per_basin_local = min(int(ncats/np_per_basin_local), 20)
-
-    fpar = " "
-    
-    if (np_per_basin_local > 1):
-        fpar = os.path.join(json_dir, f"partition_{np_per_basin_local}.json")
-        partition=f"{ngen_dir}/cmake_build/partitionGenerator {gpkg_file} {gpkg_file} {fpar} {np_per_basin_local} \"\" \"\" "
-        result = subprocess.call(partition,shell=True)
-
-    return np_per_basin_local, fpar
-
+        return np_per_basin_local, fpar
+"""
 if __name__ == "__main__":
+    workflow_infile = sys.argv[1]
+    ngen_cal_basefile = sys.argv[2]
+    workflow = NextGenWorkflow(workflow_infile, ngen_cal_basefile)
 
-    if (np_per_basin > 1 and not os.path.exists(f"{ngen_dir}/cmake_build/partitionGenerator")):
-        sys.exit("Partitioning geopackage is requested but partitionGenerator does not exit! Quitting...")
+    if workflow.np_per_basin > 1 and not os.path.exists(f"{workflow.ngen_dir}/cmake_build/partitionGenerator"):
+        sys.exit("Partitioning geopackage is requested but partitionGenerator does not exist! Quitting...")
 
-
-    if (not ngen_cal_type in ['calibration', 'validation', 'calibvalid', 'restart']):
-        print ("Running NextGen without calibration ...")
-        run_ngen_without_calibration()
+    if workflow.ngen_cal_type not in ['calibration', 'validation', 'calibvalid', 'restart']:
+        print("Running NextGen without calibration ...")
+        workflow.run_ngen_without_calibration()
     else:
-        print (f'Running NextGen with {ngen_cal_type}')
-        driver_ngen_with_calibration()
-        
+        print(f'Running NextGen with {workflow.ngen_cal_type}')
+        workflow.driver_ngen_with_calibration()
+"""
+

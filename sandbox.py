@@ -1,6 +1,6 @@
 ############################################################################################
 # Author  : Ahmad Jan Khattak
-# Contact : ahmad.jan@noaa.gov
+# Contact : ahmad.jan.khattak@noaa.gov
 # Date    : July 16, 2024
 ############################################################################################
 
@@ -14,7 +14,12 @@ path = Path(sys.argv[0]).resolve()
 workflow_dir = path.parent
 
 
-def runner(config_workflow, config_calib):
+from src_py import forcing
+
+from src_py import main
+import runner
+
+def Runner(config_workflow, config_calib):
     
     if (args.gpkg):
         print ("Generating geopackages...")
@@ -28,8 +33,8 @@ def runner(config_workflow, config_calib):
 
     if (args.forc):
         print ("Generating forcing data...")
-        generate_forcing = f"python {workflow_dir}/src_py/forcing.py {config_workflow}"
-        status = subprocess.call(generate_forcing,shell=True)
+        forcings = forcing.ForcingProcessor(config_workflow)
+        status = forcings.download_forcing()
 
         if (status):
             sys.exit("Failed during generating geopackge(s) step...")
@@ -38,27 +43,28 @@ def runner(config_workflow, config_calib):
 
     if (args.conf):
         print ("Generating config files...")
-        generate_configs = f"python {workflow_dir}/src_py/main.py {config_workflow}"
-        status = subprocess.call(generate_configs,shell=True)
+        main_ = main.Main(config_workflow)
+        main_.run()
+        #generate_configs = f"python {workflow_dir}/src_py/main.py {config_workflow}"
+        #status = subprocess.call(generate_configs,shell=True)
 
-        if (status):
-            sys.exit("Failed during generating config files step...")
-        else:
-            print ("DONE \u2713")
+        #if (status):
+        #    sys.exit("Failed during generating config files step...")
+        #else:
+        #    print ("DONE \u2713")
         
     if (args.run):
         print ("Calling Runner...")
-        
-        with open(config_workflow, 'r') as file:
-            d = yaml.safe_load(file)
 
-        run_command = f"python {workflow_dir}/runner.py {config_workflow} {config_calib}"
-        status = subprocess.call(run_command,shell=True)
+        sandbox_runner = runner.SandboxRunner(config_workflow, config_calib)
+        sandbox_runner.run()
+        #run_command = f"python {workflow_dir}/runner.py {config_workflow} {config_calib}"
+        #status = subprocess.call(run_command,shell=True)
 
-        if (status):
-            sys.exit("Failed during ngen-cal execution...")
-        else:
-            print ("DONE \u2713")
+        #if (status):
+        #    sys.exit("Failed during ngen-cal execution...")
+        #else:
+        #    print ("DONE \u2713")
     
     print ("**********************************")
     
@@ -102,4 +108,4 @@ if __name__ == "__main__":
         parser.print_help()
         sys.exit(0)
     
-    runner(config_workflow, config_calib)
+    Runner(config_workflow, config_calib)
