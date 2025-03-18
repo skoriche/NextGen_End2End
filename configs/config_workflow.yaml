@@ -45,7 +45,6 @@ formulation :
   ngen_dir           : "/Users/ahmadjan/codes/ngen/ngen"
   
   models                     : "PET, CFE-S, T-route"
-  surface_runoff_scheme      : 'NASH_CASCADE' # 'GIUH' for cfe1.0
 
   clean                      : ['existing']
   setup_simulation           : True

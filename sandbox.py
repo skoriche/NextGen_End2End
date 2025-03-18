@@ -17,7 +17,7 @@ workflow_dir = path.parent
 from src.python import forcing, driver, runner
 
 
-def Runner(config_workflow, config_calib):
+def Sandbox(config_workflow, config_calib):
     
     if (args.gpkg):
         print ("Generating geopackages...")
@@ -102,4 +102,4 @@ if __name__ == "__main__":
         parser.print_help()
         sys.exit(0)
     
-    Runner(config_workflow, config_calib)
+    Sandbox(config_workflow, config_calib)

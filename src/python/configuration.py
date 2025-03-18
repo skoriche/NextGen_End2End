@@ -29,7 +29,7 @@ os_name = platform.system()
 
 class ConfigurationGenerator:
     def __init__(self, workflow_dir, gpkg_file, forcing_dir, output_dir,
-                 ngen_dir, formulation, surface_runoff_scheme, simulation_time,
+                 ngen_dir, formulation, simulation_time,
                  verbosity, ngen_cal_type, schema_type = None):
         self.workflow_dir = workflow_dir
         self.gpkg_file = gpkg_file
@@ -37,7 +37,6 @@ class ConfigurationGenerator:
         self.output_dir = output_dir
         self.ngen_dir = ngen_dir
         self.formulation = formulation
-        self.surface_runoff_scheme = surface_runoff_scheme
         self.simulation_time = json.loads(simulation_time)
         self.verbosity = verbosity
         #self.json_dir = json_dir
@@ -45,6 +44,10 @@ class ConfigurationGenerator:
         self.ngen_cal_type = ngen_cal_type
         self.schema_type = schema_type
 
+        if "CFE" in self.formulation:
+            with open(os.path.join(self.workflow_dir, "configs/basefiles", "cfe.yaml"), 'r') as file:
+                dcfe = yaml.safe_load(file)
+            self.surface_runoff_scheme = dcfe['surface_runoff_scheme']
 
         self.gdf, self.catids = self.read_gpkg_file()
         
@@ -248,16 +251,17 @@ class ConfigurationGenerator:
                 f.writelines('\n'.join(nom_params))
 
         
-    def write_cfe_input_files(self,
-                              surface_runoff_scheme="NASH_CASCADE",
-                              sft_coupled = False):
+    def write_cfe_input_files(self):
 
         cfe_dir = os.path.join(self.output_dir, "configs/cfe")
         self.create_directory(cfe_dir)
-        if "CFE-S" in self.formulation:
-            surface_water_partitioning_scheme = "Schaake"
-        elif "CFE-X" in self.formulation:
-            surface_water_partitioning_scheme = "Xinanjiang"
+
+        with open(os.path.join(self.workflow_dir, "configs/basefiles", "cfe.yaml"), 'r') as file:
+            dcfe = yaml.safe_load(file)
+
+        surface_runoff_scheme = dcfe['surface_runoff_scheme']
+        surface_water_partitioning_scheme = dcfe['surface_water_partitioning_scheme']
+        sft_coupled = dcfe['sft_coupled']
             
         urban_decimal_fraction = 0.0
         delimiter = ","
@@ -318,7 +322,7 @@ class ConfigurationGenerator:
                 cfe_params.append(f'x_Xinanjiang_shape_parameter={self.soil_class_NWM["XXAJ"][soil_id]}')
                 cfe_params.append(f'urban_decimal_fraction={urban_decimal_fraction}')
 
-            if sft_coupled:
+            if sft_coupled.lower() == "true":
                 ice_content_threshold = 0.3
                 cfe_params.append("sft_coupled=true")
                 cfe_params.append(f"ice_content_threshold={ice_content_threshold}")
