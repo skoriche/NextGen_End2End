@@ -19,16 +19,16 @@ Ensure R and Rtools are already installed before proceeding. There are two ways 
   #### Option 1: Using RStudio
   1. Open RStudio
   2. Load and run the installation script by sourcing it:
-     - Open `<path_to_sandboxhub>/src_r/install_load_libs.R` in RStudio.
+     - Open `<path_to_sandboxhub>/src/R/install_load_libs.R` in RStudio.
      - Click Source to execute the script.
      - Alternatively, run the following command in the RStudio Console:
        ```
-       source("~/<path_to_sandboxhub>/src_r/install_load_libs.R")
+       source("~/<path_to_sandboxhub>/src/R/install_load_libs.R")
        ```
   #### Option 2: Using the Command Line
   Run the following command in a terminal or command prompt:
   ```
-   Rscript <path_to_sandboxhub>/src_r/install_load_libs.R
+   Rscript <path_to_sandboxhub>/src/R/install_load_libs.R
   ```
 
 ### <ins> Step 3. Hydrofabric Subsetting
@@ -36,8 +36,8 @@ Ensure R and Rtools are already installed before proceeding. There are two ways 
   - Download domain (CONUS or oCONUS) from [lynker-spatial](https://www.lynker-spatial.com/data?path=hydrofabric%2Fv2.2%2F), for instance conus/conus_nextgen.gpkg
   - open `<path_to_sandboxhub>/configs/config_workflow.yaml` [here](configs/config_workflow.yaml) and adjust workflow_dir, input_dir, output_dir, and gpkg_model_params according to your local settings
   - Now there are two options to proceed:
-      - run `python <path_to_sandboxhub>/main.py -gpkg`
-      - or open `<path_to_sandboxhub>/src_r/main.R` in RStudio and source on main.R. Note Set file name `infile_config` [here](https://github.com/ajkhattak/basin_workflow/blob/nwm-v4-bm/src_r/main.R#L54) 
+      - run `python <path_to_sandboxhub>/sandbox.py -gpkg`
+      - or open `<path_to_sandboxhub>/src/R/main.R` in RStudio and source on main.R. Note Set file name `infile_config` [here](https://github.com/ajkhattak/basin_workflow/blob/nwm-v4-bm/src/R/main.R#L54) 
     
     Either one will install the hydrofabric and several other libraries, and if everything goes well, a basin geopackage will be subsetted and stored under `<input_dir>/<basin_id>/data/gage_<basin_id>.gpkg`
 
@@ -46,11 +46,11 @@ The workflow uses [CIROH_DL_NextGen](https://github.com/ajkhattak/CIROH_DL_NextG
   - `mkdir ~/.venv_forcing`
   - `python -m venv ~/.venv_forcing`
   - `source ~/.venv_forcing/bin/activate`
-  - `pip install -r extern/CIROH_DL_NextGen/forcing_prep/requirements.txt`
+  - `pip install -r extern/CIROH_DL_NextGen/forcing_prep/requirements.txt`. Note: if ran into errors while downding data, try creating venv using `pip install -r doc/env/requirements_forcing.txt`
   - open `<path_to_sandboxhub>/configs/config_workflow.yaml` [here](configs/config_workflow.yaml) and setup `forcings` block
   - To download the forcing data run:
     ```
-    python <path_to_sandboxhub>/main.py -forc
+    python <path_to_sandboxhub>/sandbox.py -forc
     ```
     
 ### <ins> Step 5. NGEN-CAL and Plugins Installation
@@ -70,13 +70,13 @@ The workflow uses [CIROH_DL_NextGen](https://github.com/ajkhattak/CIROH_DL_NextG
 ### <ins>  Step 6. Generate Configuration and Realization Files
 To generate configuratioin and realization files, setup the `formulation` block in the workflow config file [here](configs/config_workflow.yaml), and run the following command:
  ```
-    python <path_to_sandboxhub>/main.py -conf
+    python <path_to_sandboxhub>/sandbox.py -conf
  ```
 
 ### <ins> Step 7. Run Calibration/Validation Simulations
 Setup the `ngen_cal` block in the workflow config file [here](configs/config_workflow.yaml), and run the following command, note this depends on all of the above steps:
  ```
-    python <path_to_sandboxhub>/main.py -run
+    python <path_to_sandboxhub>/sandbox.py -run
  ```
 
 #### Summary
@@ -85,7 +85,7 @@ Setup the `ngen_cal` block in the workflow config file [here](configs/config_wor
 3. Generate configuration files
 4. Run Simulations: Using
   ```
-    python <path_to_sandboxhub>/main.py option
+    python <path_to_sandboxhub>/sandbox.py option
     OPTIONS = [-gpkg -forc -conf -run]
   ```
 - Option: `-gpkg` downloads geopackage(s) given a gage ID(s), extracts and locally compute TWI, GIUH, and Nash Cascade parameters; see `divide-attributes` in the gage_<basin_id>.gpkg file
@@ -93,7 +93,7 @@ Setup the `ngen_cal` block in the workflow config file [here](configs/config_wor
 - Option: `-conf` generates configuration and realization files for the selected models/basins
 - Option: `-run` executes NextGen simulations with and without calibration
 
-Note: These options can be run individually or combined together, for example, `path_to/main.py -gpkg -conf -run`. The `-gpkg` is an expensive step, should be run once to get the desired basin geopacakge and associated model parameters.
+Note: These options can be run individually or combined together, for example, `path_to/sandbox.py -gpkg -conf -run`. The `-gpkg` is an expensive step, should be run once to get the desired basin geopacakge and associated model parameters.
 
 
 

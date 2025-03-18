@@ -22,8 +22,8 @@ import argparse
 import json
 from pathlib import Path
 
-from src/python import helper
-from src/python import generate
+from src.python import helper
+from src.python import generate
 
 class Driver:
     def __init__(self, infile):
@@ -63,6 +63,9 @@ class Driver:
             self.simulation_time = dsim["calibration_time"]
             self.calib_eval_time = dsim["calib_eval_time"]
 
+        elif self.ngen_cal_type == 'validation':
+            self.simulation_time = dsim["validation_time"]
+            self.valid_eval_time = dsim["valid_eval_time"]
     
     def process_clean_input_param(self, clean):
         clean_lst = []
@@ -250,8 +253,8 @@ class Driver:
         assert os.path.exists(self.workflow_dir)
         assert os.path.exists(self.ngen_dir)
 
-        if not os.path.exists(os.path.join(self.workflow_dir, "src_py")):
-            sys.exit("check `workflow_dir`, it should be the parent directory of `src_py` directory")
+        if not os.path.exists(os.path.join(self.workflow_dir, "src/python")):
+            sys.exit("check `workflow_dir`, it should be the parent directory of `src/python` directory")
 
         all_dirs = glob.glob(os.path.join(self.input_dir, '*/'), recursive=True)
         self.gpkg_dirs = [Path(g) for g in all_dirs if os.path.exists(os.path.join(g, 'data')) and glob.glob(os.path.join(g, 'data', '*.gpkg'))]
