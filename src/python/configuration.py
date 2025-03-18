@@ -21,7 +21,7 @@ import platform
 from pathlib import Path
 
 try:
-    from src_py import schema
+    from src.python import schema
 except:
     import schema
 

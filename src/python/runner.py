@@ -15,9 +15,9 @@ import multiprocessing
 import platform
 import json
 from pathlib import Path
-from src_py import configuration
+from src.python import configuration
 
-class SandboxRunner:
+class Runner:
     def __init__(self, config_workflow, config_calib):
         self.os_name = platform.system()
         self.config_workflow = config_workflow
@@ -33,7 +33,6 @@ class SandboxRunner:
             self.run_ngen_without_calibration()
         else:
             print(f'Running NextGen with {self.ngen_cal_type}')
-            #self.driver_ngen_with_calibration()
             infile = os.path.join(self.output_dir, "basins_passed.csv")
             indata = pd.read_csv(infile, dtype=str)
             pool = multiprocessing.Pool(processes=self.basins_in_par)
@@ -183,7 +182,7 @@ class SandboxRunner:
                                                         num_proc=np_per_basin_local)
             
             ConfigGen.write_calib_input_files()
-            run_command = f"python {self.workflow_dir}/src_py/validation.py configs/ngen-cal_valid_config.yaml"
+            run_command = f"python {self.workflow_dir}/src/python/validation.py configs/ngen-cal_valid_config.yaml"
             result = subprocess.call(run_command, shell=True)
 
     
@@ -204,20 +203,4 @@ class SandboxRunner:
             result = subprocess.call(partition, shell=True)
 
         return np_per_basin_local, fpar
-"""
-if __name__ == "__main__":
-    workflow_infile = sys.argv[1]
-    ngen_cal_basefile = sys.argv[2]
-    workflow = NextGenWorkflow(workflow_infile, ngen_cal_basefile)
-
-    if workflow.np_per_basin > 1 and not os.path.exists(f"{workflow.ngen_dir}/cmake_build/partitionGenerator"):
-        sys.exit("Partitioning geopackage is requested but partitionGenerator does not exist! Quitting...")
-
-    if workflow.ngen_cal_type not in ['calibration', 'validation', 'calibvalid', 'restart']:
-        print("Running NextGen without calibration ...")
-        workflow.run_ngen_without_calibration()
-    else:
-        print(f'Running NextGen with {workflow.ngen_cal_type}')
-        workflow.driver_ngen_with_calibration()
-"""
 

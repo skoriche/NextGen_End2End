@@ -14,10 +14,10 @@ from pathlib import Path
 import argparse
 import json
 
-from src/python import configuration
-from src/python import realization
+from src.python import configuration
+from src.python import realization
 
-class Driver:
+class Generate:
     def __init__(self, workflow_dir, gpkg_file, forcing_dir, ngen_dir, sim_time, formulation,
                  output_dir, forcing_format, ngen_cal_type, schema):
         self.workflow_dir = workflow_dir
