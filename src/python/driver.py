@@ -40,7 +40,6 @@ class Driver:
         dformul = d['formulation']
         self.ngen_dir = dformul["ngen_dir"]
         self.formulation = dformul['models']
-        self.surface_runoff_scheme = dformul['surface_runoff_scheme']
         self.clean = self.process_clean_input_param(dformul.get('clean', "none"))
         self.verbosity = dformul.get('verbosity', 0)
         self.basins_in_par = dformul.get('basins_in_par', 1)
@@ -150,9 +149,6 @@ class Driver:
             print(filled_dot, gpkg_name, end="")
 
         gpkg_dir = os.path.join(i_dir, gpkg_dir)
-        #config_dir = os.path.join(o_dir, "configs")
-        #json_dir = os.path.join(o_dir, "json")
-        #sim_output_dir = os.path.join(o_dir, "outputs")
 
         helper.create_clean_dirs(output_dir=o_dir,
                                  setup_simulation=self.setup_simulation,
@@ -164,15 +160,15 @@ class Driver:
 
         # Call generate files
         driver_ = generate.Generate(workflow_dir = self.workflow_dir,
-                                     gpkg_file = gpkg_dir,
-                                     forcing_dir = f_dir,
-                                     ngen_dir = self.ngen_dir,
-                                     sim_time = self.simulation_time,
-                                     formulation = self.formulation,
-                                     output_dir = o_dir,
-                                     forcing_format = self.forcing_format,
-                                     ngen_cal_type = self.ngen_cal_type,
-                                     schema = self.schema_type)
+                                    gpkg_file = gpkg_dir,
+                                    forcing_dir = f_dir,
+                                    ngen_dir = self.ngen_dir,
+                                    sim_time = self.simulation_time,
+                                    formulation = self.formulation,
+                                    output_dir = o_dir,
+                                    forcing_format = self.forcing_format,
+                                    ngen_cal_type = self.ngen_cal_type,
+                                    schema = self.schema_type)
 
         failed = False
         if not failed:

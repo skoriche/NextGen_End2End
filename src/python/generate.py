@@ -83,7 +83,6 @@ class Generate:
                                                          output_dir = self.output_dir,
                                                          ngen_dir = self.ngen_dir,
                                                          formulation = self.formulation,
-                                                         surface_runoff_scheme = "NASH_CASCADE",
                                                          simulation_time = self.simulation_time,
                                                          verbosity = 1,
                                                          ngen_cal_type = self.ngen_cal_type,
