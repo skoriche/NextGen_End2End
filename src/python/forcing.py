@@ -148,13 +148,3 @@ class ForcingProcessor:
             yaml.dump(d, file, default_flow_style=False, sort_keys=False)
 
         return os.path.join(d["out_dir"], "config_forcing.yaml")
-
-
-#if __name__ == "__main__":
-#    if len(sys.argv) != 2:
-#        print("Usage: python script.py <config_file>")
-#        sys.exit(1)
-#    config_file = sys.argv[1]
-#    processor = ForcingProcessor(config_file)
-#    processor.get_gpkg_dirs()
-#    processor.forcing(nproc=processor.num_processors_forcing)

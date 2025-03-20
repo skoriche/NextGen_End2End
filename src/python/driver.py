@@ -26,7 +26,7 @@ from src.python import helper
 from src.python import generate
 
 class Driver:
-    def __init__(self, infile):
+    def __init__(self, infile, formulations_supported):
         self.colors = helper.colors()
 
         self.config_workflow = infile
@@ -36,6 +36,7 @@ class Driver:
         self.workflow_dir = d["workflow_dir"]
         self.input_dir = d["input_dir"]
         self.output_dir = Path(d["output_dir"])
+        self.formulations_supported = formulations_supported
         
         dformul = d['formulation']
         self.ngen_dir = dformul["ngen_dir"]
@@ -125,7 +126,7 @@ class Driver:
         i_dir = dirs[0]
         o_dir = dirs[1]
         f_dir = dirs[2]
-        print ("gen_ ", dirs)
+
         o_dir.mkdir(parents=True, exist_ok=True)
         os.chdir(o_dir)
 
@@ -165,6 +166,7 @@ class Driver:
                                     ngen_dir = self.ngen_dir,
                                     sim_time = self.simulation_time,
                                     formulation = self.formulation,
+                                    formulation_supported = self.formulations_supported,
                                     output_dir = o_dir,
                                     forcing_format = self.forcing_format,
                                     ngen_cal_type = self.ngen_cal_type,

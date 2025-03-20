@@ -1,7 +1,3 @@
-# See main.py for details about these parameters
-
-#
-# See main.R for further details
 # make sure to install yaml package using install.packages("yaml") if not installed already
 
 workflow_dir  : "/Users/ahmadjan/codes/workflows/NextGenSandboxHub"
@@ -10,6 +6,7 @@ output_dir    : "/Users/ahmadjan/Core/projects/testing/output"
 
 
 # to subset a location using hydrofabric
+# See main.R for further details
 subsetting :
   hf_version               : "2.2" # Only enter version number, e.g. "2.2" or "2.1.1"
   # Ensure that this gpkg matches the hf_version specified above:
@@ -35,7 +32,7 @@ subsetting :
       pattern   :  "hf_v211_"
 
 
-forcings: 
+forcings : 
   forcing_format     : ".nc" 
   forcing_venv_dir   : "/Users/ahmadjan/.ngen_forcing/" # provide only when using forcing data downloaders
   forcing_dir        : "/Users/ahmadjan/Core/projects/testing/input/{*}/data/forcing/2010_to_2011/" # start year and end year +1 ; Before the asterisk should be the same as your input_dir above
@@ -44,7 +41,8 @@ forcings:
 formulation :
   ngen_dir           : "/Users/ahmadjan/codes/ngen/ngen"
   
-  models                     : "PET, CFE-S, T-route"
+  #models                     : "PET, CFE, T-route"
+  models                     : "NOM, CFE"
 
   clean                      : ['existing']
   setup_simulation           : True

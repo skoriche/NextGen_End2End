@@ -19,7 +19,7 @@ from src.python import realization
 
 class Generate:
     def __init__(self, workflow_dir, gpkg_file, forcing_dir, ngen_dir, sim_time, formulation,
-                 output_dir, forcing_format, ngen_cal_type, schema):
+                 formulation_supported, output_dir, forcing_format, ngen_cal_type, schema):
         self.workflow_dir = workflow_dir
         self.gpkg_file = gpkg_file
         self.forcing_dir = forcing_dir
@@ -38,25 +38,7 @@ class Generate:
         if not os.path.exists(self.forcing_dir):
             sys.exit(f'The forcing directory does not exist: ', self.forcing_dir)
 
-        self.formulation_supported = [
-            "CFE-S",
-            "CFE-X",
-            "LASAM",
-            "NOM,CFE-S",
-            "NOM,CFE-X",
-            "PET,CFE-S",
-            "PET,CFE-X",
-            "NON,LASAM",
-            "PET,LASAM",
-            "NOM,CFE-S,PET",
-            "NOM,CFE-X,PET",
-            "NOM,CFE-S,SMP,SFT",
-            "NOM,CFES-X,SMP,SFT",
-            "NOM,LASAM,SMP,SFT",
-            "NOM,TOPMODEL",
-            "BASELINE,CFE",
-            "BASELINE,LAS"
-        ]
+        self.formulation_supported = formulation_supported
 
         if "T-route" in self.formulation_in or "t-route" in self.formulation_in:
             self.formulation_supported_w_troute = [f'{model},T-route' for model in self.formulation_supported]
@@ -93,13 +75,10 @@ class Generate:
             print(self.colors.ENDC)
             
         if "NOM" in self.formulation:
-            print ("caling NOM")
             ConfigGen.write_nom_input_files()
         if "PET" in self.formulation:
-            print ("caling PET")
             ConfigGen.write_pet_input_files()
-        if "CFE-S" in self.formulation or "CFE-X" in self.formulation:
-            print ("caling CFE")
+        if "CFE" in self.formulation:
             ConfigGen.write_cfe_input_files()
 
         if "T-route" in self.formulation_in or "t-route" in self.formulation_in:
@@ -118,17 +97,16 @@ class Generate:
                                                    output_dir = self.output_dir,
                                                    ngen_dir = self.ngen_dir,
                                                    formulation = self.formulation,
-                                                   surface_runoff_scheme = "NASH_CASCADE",
                                                    simulation_time = self.simulation_time,
                                                    verbosity = 1,
                                                    ngen_cal_type = self.ngen_cal_type,
                                                    forcing_format = self.forcing_format)
         RealGen.write_realization_file()
 
-        if result:
-            sys.exit("realization file could not be generated, check the options provided!")
-        else:
-            print("************* DONE (Baseline realization file successfully generated!) ************** ")
+        #if result:
+        #    sys.exit("realization file could not be generated, check the options provided!")
+        #else:
+        #    print("************* DONE (Baseline realization file successfully generated!) ************** ")
                 
     class colors:
         BLUE = '\33[34m'
