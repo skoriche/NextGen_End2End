@@ -16,6 +16,18 @@ workflow_dir = path.parent
 
 from src.python import forcing, driver, runner
 
+formulations_supported = [
+    "NOM,CFE",
+    "PET,CFE",
+    "NON,LASAM",
+    "PET,LASAM",
+    "NOM,CFE,PET",
+    "NOM,CFE,SMP,SFT",
+    "NOM,LASAM,SMP,SFT",
+    "NOM,TOPMODEL",
+    "BASELINE,CFE",
+    "BASELINE,LAS"
+]
 
 def Sandbox(config_workflow, config_calib):
     
@@ -41,7 +53,7 @@ def Sandbox(config_workflow, config_calib):
 
     if (args.conf):
         print ("Generating config files...")
-        _driver = driver.Driver(config_workflow)
+        _driver = driver.Driver(config_workflow, formulations_supported)
         status  = _driver.run()
 
         if (status):
@@ -75,8 +87,8 @@ if __name__ == "__main__":
         parser.add_argument("-i",    dest="workflow_infile",  type=str, required=False,  help="workflow config file")
         parser.add_argument("-j",    dest="calib_infile",     type=str, required=False,  help="caliberation config file")
         args = parser.parse_args()
-    except:
-        parser.print_help()
+    except SystemExit:
+        print("Formulations supported:\n" + "\n".join(formulations_supported))
         sys.exit(0)
 
     if (args.workflow_infile):
@@ -98,8 +110,7 @@ if __name__ == "__main__":
         config_calib = f"{workflow_dir}/configs/config_calib.yaml"
     
     if (len(sys.argv) < 2):
-        print ("No arguments are provide, printing help()")
-        parser.print_help()
+        print ("No arguments are provide")
         sys.exit(0)
     
     Sandbox(config_workflow, config_calib)

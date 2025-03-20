@@ -1,4 +1,0 @@
-surface_runoff_scheme : "NASH_CASCADE"
-surface_water_partitioning_scheme : "Schaake" #Xinanjiang
-sft_coupled           : "false"
- 

@@ -23,23 +23,20 @@ import shutil
 import json
 
 class RealizationGenerator:
-    def __init__(self, ngen_dir, forcing_dir,  output_dir, formulation, surface_runoff_scheme ,
+    def __init__(self, ngen_dir, forcing_dir,  output_dir, formulation,
                  simulation_time, forcing_format, verbosity, ngen_cal_type):
         
         self.ngen_dir = ngen_dir
         self.forcing_dir = forcing_dir
         self.output_dir = output_dir
         self.formulation = formulation
-        self.surface_runoff_scheme  = surface_runoff_scheme
         self.simulation_time = json.loads(simulation_time)
         self.config_dir = os.path.join(output_dir,"configs")
         self.forcing_format = forcing_format
         self.verbosity = verbosity
         self.ngen_cal_type = ngen_cal_type
-        print ("RF : ",self.ngen_cal_type)
         self.lib_files = self.get_lib_files()
-        #self.formulation.replace(",","_")
-        print ("FF ", self.formulation, self.formulation.replace(",","_"))
+
         realization_name = self.formulation.replace(",","_").lower()
         self.realization_file = os.path.join(self.output_dir,"json",f"realization_{realization_name}.json")
         if "CFE-S" in self.formulation:
@@ -365,7 +362,7 @@ class RealizationGenerator:
         return [block_jinjabmi, block_unit_conversion]
 
     def write_realization_file(self):
-        print ("S1 ", self.simulation_time)
+
         root = {
             "time": {
                 "start_time": self.simulation_time["start_time"],
@@ -413,9 +410,8 @@ class RealizationGenerator:
         modules = []
 
         model_type_name = self.formulation.replace(",","_")
-        print ("R3 ", model_type_name)
-            
-        if ("CFE-S" in self.formulation or "CFE-X" in self.formulation) and ("PET" in self.formulation):
+        
+        if ("CFE" in self.formulation)  and ("PET" in self.formulation):
             #model_type_name = "CFE"
             main_output_variable = "Q_OUT"
             

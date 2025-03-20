@@ -166,7 +166,7 @@ class Runner:
             result = subprocess.call(run_command, shell=True)
 
         if self.ngen_cal_type in ['validation', 'calibvalid']:
-            print ("XX")
+
             start_time = pd.Timestamp(self.validation_time['start_time']).strftime("%Y%m%d%H%M")
             troute_output_file = os.path.join("./troute_output_{}.nc".format(start_time))
             ConfigGen = configuration.ConfigurationCalib(gpkg_file = gpkg_file,

@@ -45,16 +45,20 @@ class ConfigurationGenerator:
         self.schema_type = schema_type
 
         if "CFE" in self.formulation:
-            with open(os.path.join(self.workflow_dir, "configs/basefiles", "cfe.yaml"), 'r') as file:
-                dcfe = yaml.safe_load(file)
+            with open(os.path.join(self.workflow_dir, "configs/basefiles", "custom.yaml"), 'r') as file:
+                dcfe = yaml.safe_load(file)['models']['CFE']
+
             self.surface_runoff_scheme = dcfe['surface_runoff_scheme']
 
+        self.soil_params_NWM_dir = os.path.join(self.ngen_dir,"extern/noah-owp-modular/noah-owp-modular/parameters")
+                
         self.gdf, self.catids = self.read_gpkg_file()
         
         self.soil_class_NWM = self.get_soil_class_NWM()
+
         
     def get_soil_class_NWM(self):
-        nom_soil_file = os.path.join(self.ngen_dir,"extern/noah-owp-modular/noah-owp-modular/parameters/SOILPARM.TBL")
+        nom_soil_file = os.path.join(self.soil_params_NWM_dir, "SOILPARM.TBL")
         header = ['index', 'BB', 'DRYSMC', 'F11', 'MAXSMC', 'REFSMC', 'SATPSI', 'SATDK', 'SATDW', 'WLTSMC', 'QTZ', 'BVIC', 'AXAJ', 'BXAJ', 'XXAJ', 'BDVIC', 'BBVIC', 'GDVIC', 'ISLTYP']
         df = pd.read_table(nom_soil_file, delimiter=',', index_col=0, skiprows=3, nrows=19, names=header)
         return df
@@ -132,7 +136,7 @@ class ConfigurationGenerator:
             gdf['twi'] = gdf_soil[params['twi']]
             gdf['width_dist'] = gdf_soil[params['width_dist']]
 
-        if "CFE-S" in self.formulation or "CFE-X" in self.formulation:
+        if "CFE" in self.formulation:
             if self.surface_runoff_scheme == "GIUH" or self.surface_runoff_scheme == 1:
                 gdf['giuh'] = gdf_soil[params['giuh']]
             elif self.surface_runoff_scheme == "NASH_CASCADE" or self.surface_runoff_scheme == 2:
@@ -150,8 +154,13 @@ class ConfigurationGenerator:
 
     def write_nom_input_files(self):
         nom_dir = os.path.join(self.output_dir,"configs/nom")
-
         self.create_directory(nom_dir)
+        
+        # copy NOM params dir 
+        str_sub ="cp -r "+ self.soil_params_NWM_dir + " %s"%nom_dir
+        out=subprocess.call(str_sub,shell=True)
+        
+
         start_time = pd.Timestamp(self.simulation_time['start_time']).strftime("%Y%m%d%H%M")
         end_time = pd.Timestamp(self.simulation_time['end_time']).strftime("%Y%m%d%H%M")
 
@@ -256,8 +265,8 @@ class ConfigurationGenerator:
         cfe_dir = os.path.join(self.output_dir, "configs/cfe")
         self.create_directory(cfe_dir)
 
-        with open(os.path.join(self.workflow_dir, "configs/basefiles", "cfe.yaml"), 'r') as file:
-            dcfe = yaml.safe_load(file)
+        with open(os.path.join(self.workflow_dir, "configs/basefiles", "custom.yaml"), 'r') as file:
+            dcfe = yaml.safe_load(file)['models']['CFE']
 
         surface_runoff_scheme = dcfe['surface_runoff_scheme']
         surface_water_partitioning_scheme = dcfe['surface_water_partitioning_scheme']
@@ -771,7 +780,7 @@ class ConfigurationCalib:
         
         conf_dir = os.path.join(self.output_dir, "configs")
         realization = glob.glob(os.path.join(self.output_dir, "json/realization_*.json"))
-        print ("OO : ", self.output_dir, realization)
+
         assert len(realization) == 1
 
         if not os.path.exists(self.ngen_cal_basefile):
