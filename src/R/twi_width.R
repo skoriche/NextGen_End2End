@@ -5,7 +5,7 @@
 # ########################### TWI ########################
 # Function computes topographic wetness index (TWI) and generates files 
 # needed for computing width function (see below)
-twi_function <- function(div_infile, dem_output_dir, distribution = 'quantiles', nclasses = 5) {
+ComputeTWI <- function(div_infile, dem_output_dir, distribution = 'quantiles', nclasses = 5) {
   
   div <- read_sf(div_infile, 'divides')
   
@@ -46,7 +46,7 @@ twi_function <- function(div_infile, dem_output_dir, distribution = 'quantiles',
 
 
 
-width_function <- function(div_infile, dem_output_dir) {
+ComputeWidth <- function(div_infile, dem_output_dir) {
   
   div <- read_sf(div_infile, 'divides')
   

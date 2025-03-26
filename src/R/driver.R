@@ -5,14 +5,13 @@
 
 ############################ DRIVER_GIVEN_GAGE_ID ##############################
 # main script that loops over all the gage IDs and computes giuh/twi etc.
-driver_given_gage_IDs <- function(gage_ids, 
-                                  output_dir,
-                                  hf_source = NULL,
-                                  failed_dir = "failed_cats",
-                                  write_attr_parquet = FALSE,
-                                  dem_input_file = NULL,
-                                  dem_output_dir = "",
-                                  nproc = 1) {
+DriverGivenGageIDs <- function(gage_ids, 
+                               output_dir,
+                               failed_dir = "failed_cats",
+                               dem_input_file = NULL,
+                               dem_output_dir = "",
+                               nproc = 1) {
+  
   print ("DRIVER GIVEN GAGE ID")
   # create directory to stored catchment geopackage in case of errors or missing data
   failed_dir = "failed_cats"
@@ -33,8 +32,7 @@ driver_given_gage_IDs <- function(gage_ids,
   #                               "failed_dir",
   #                               "write_attr_parquet",
   #                               "dem_output_dir",
-  #                               "dem_input_file",
-  #                               "hf_source"
+  #                               "dem_input_file"
   #                               ),
   #               envir = environment())
   
@@ -53,7 +51,7 @@ driver_given_gage_IDs <- function(gage_ids,
 
   # stopCluster(cl)
 
-  lapply(X = gage_ids, FUN = process_catchment_id, failed_dir = failed_dir)
+  lapply(X = gage_ids, FUN = ProcessCatchmentID, failed_dir = failed_dir)
   
   
   setwd(output_dir)
@@ -66,7 +64,7 @@ driver_given_gage_IDs <- function(gage_ids,
 # for each catchemnt id
 # it calls run_driver for each gage id and computes giuh/twi etc.
 
-process_catchment_id <- function(id, failed_dir) {
+ProcessCatchmentID <- function(id, failed_dir) {
   print ("PROCESS CATCHMENT ID FUNCTION")
   # vector contains ID of basins that failed for some reason
   cats_failed <- numeric(0)
@@ -90,12 +88,10 @@ process_catchment_id <- function(id, failed_dir) {
   
   tryCatch({
     cat ("Processing catchment: ", id, "\n")
-    run_driver(gage_id = id,
-               dem_input_file = dem_input_file,
-               dem_output_dir = dem_dir, 
-               hf_source = hf_source,
-               write_attr_parquet = write_attr_parquet
-    )
+    RunDriver(gage_id = id,
+              dem_input_file = dem_input_file,
+              dem_output_dir = dem_dir
+              )
     
     failed <- FALSE
   }, error = function(e) {
@@ -129,15 +125,13 @@ process_catchment_id <- function(id, failed_dir) {
 
 ############################ DRIVER_GIVEN_GPKG #################################
 # main script that loops over all the geopackages and computes giuh/twi etc.
-driver_given_gpkg <- function(gage_files, 
-                              gpkg_dir, 
-                              output_dir,
-                              hf_source = NULL,
-                              failed_dir = "failed_cats",
-                              dem_output_dir = "",
-                              dem_input_file = NULL,
-                              write_attr_parquet = FALSE,
-                              nproc = 1) {
+DriverGivenGPKG <- function(gage_files, 
+                            gpkg_dir, 
+                            output_dir,
+                            failed_dir = "failed_cats",
+                            dem_output_dir = "",
+                            dem_input_file = NULL,
+                            nproc = 1) {
   
   print ("DRIVER GIVEN GEOPACKAGE FUNCTION")
   
@@ -164,7 +158,6 @@ driver_given_gpkg <- function(gage_files,
 #                                 "libraries_lst", 
 #                                 "output_dir", 
 #                                 "failed_dir",
-#                                 "hf_source",
 #                                 "gpkg_dir",
 #                                 "as_sqlite",
 # 				                        "write_attr_parquet",
@@ -184,13 +177,13 @@ driver_given_gpkg <- function(gage_files,
   # Initialize and call pb (progress bar)
   #cats_failed <- pblapply(X = gage_files, FUN = process_gpkg, cl = cl, failed_dir)
   
-  cats_failed <- lapply(X = gage_files, FUN = process_gpkg, failed_dir)
+  cats_failed <- lapply(X = gage_files, FUN = ProcessGPKG, failed_dir)
   setwd(output_dir)
   
   return(cats_failed)
 }
 
-process_gpkg <- function(gfile, failed_dir) {
+ProcessGPKG <- function(gfile, failed_dir) {
   
   print ("PROCESS GPKG FUNCTION")
 
@@ -236,12 +229,11 @@ process_gpkg <- function(gfile, failed_dir) {
 
     local_gpkg_file = glue("{cat_dir}/data/{gpkg_name}")
     
-    run_driver(is_gpkg_provided = TRUE,
-               loc_gpkg_file = local_gpkg_file,
-               dem_output_dir = dem_dir,
-               dem_input_file = dem_input_file,
-               write_attr_parquet = write_attr_parquet
-               )
+    RunDriver(is_gpkg_provided = TRUE,
+              loc_gpkg_file = local_gpkg_file,
+              dem_output_dir = dem_dir,
+              dem_input_file = dem_input_file
+              )
       
     failed <- FALSE
       
@@ -274,14 +266,13 @@ process_gpkg <- function(gfile, failed_dir) {
 
 ############################# RUN_DRIVER ######################################
 # main runner function
-run_driver <- function(gage_id = NULL, 
-                       is_gpkg_provided = FALSE, 
-                       dem_input_file = NULL,
-                       dem_output_dir,
-                       hf_source = NULL,
-                       loc_gpkg_file = "",
-                       twi_pre_computed_option = FALSE,
-                       write_attr_parquet = FALSE) {
+RunDriver <- function(gage_id = NULL, 
+                      is_gpkg_provided = FALSE, 
+                      dem_input_file = NULL,
+                      dem_output_dir,
+                      loc_gpkg_file = "",
+                      twi_pre_computed_option = FALSE
+                      ) {
 
   print ("RUN DRIVER FUNCTION")
   
@@ -302,37 +293,43 @@ run_driver <- function(gage_id = NULL,
     } else {
       domain <- "conus"
     }
-
+    
+    compute_divide_attributes <- TRUE
+    
     # If the gpkg exists, use that for subsetting
-    if (file.exists(hf_gpkg_path)) {
-      print('USING LOCAL GPKG FILE FOR SUBSETTING')
+    if (hf_version == "2.2") {
+      
+      if (file.exists(hf_gpkg_path)) {
+        print('USING LOCAL GPKG FILE FOR SUBSETTING')
+        hf_gpkg <- hf_gpkg_path
+      } else {
+        print('USING REMOTE GPKG FILE FOR SUBSETTING')
+        hf_gpkg = NULL
+      }
+      
       
       hfsubsetR::get_subset(hl_uri = glue("gages-{gage_id}"),
                             outfile = outfile,
-                            gpkg = hf_gpkg_path,
+                            gpkg = hf_gpkg,
                             hf_version = hf_version,
                             lyrs = c("divides", "flowpaths", "network", "nexus",
                                      "flowpath-attributes",
                                      "divide-attributes"),
                             type = 'nextgen',
                             overwrite = TRUE)
-      # check if the divide-attributes layer has the same number of rows as the divides layer
-      check_divs <- st_read(outfile, layer = 'divides')
-      check_attrs <- st_read(outfile, layer = 'divide-attributes')
-      if (!nrow(check_divs) == nrow(check_attrs)) {
-        print(glue("DIVIDES HAS {nrow(check_divs)} ROWS BUT DIVIDE-ATTRIBUTES HAS {nrow(check_attrs)}!!"))
-        stop()
+    } else if (hf_version == "2.1.1") {
+      layers = c("divides", "flowlines", "network", "nexus",
+                 "flowpath-attributes","model-attributes")
+      
+      if (compute_divide_attributes) {
+        layers = c("divides", "flowlines", "network", "nexus")
       }
 
-    } else { # If the gpkg does not exist, get from lynker-spatial hydrofabric bucket
-      print('USING REMOTE GPKG FILE FOR SUBSETTING')
-      hfsubsetR::get_subset(hl_uri = glue("gages-{gage_id}"),
+      hfsubsetR::get_subset(nldi_feature = list(featureSource="nwissite", featureID=glue("USGS-{gage_id}")),
                             outfile = outfile, 
                             hf_version = hf_version, 
-                            domain = domain,
-                            lyrs = c("divides", "flowpaths", "network", "nexus", 
-                                     "flowpath-attributes",
-                                     "divide-attributes"),
+                            domain = "conus",
+                            lyrs = layers,
                             overwrite = TRUE)
     }
     time.taken <- as.numeric(Sys.time() - start.time, units = "secs") #end.time - start.time
@@ -342,6 +339,16 @@ run_driver <- function(gage_id = NULL,
     outfile <- loc_gpkg_file
     }
 
+  # check if the divide-attributes layer has the same number of rows as the divides layer
+  if (!compute_divide_attributes) {
+    check_divs <- st_read(outfile, layer = 'divides')
+    check_attrs <- st_read(outfile, layer = 'divide-attributes')
+    if (!nrow(check_divs) == nrow(check_attrs)) {
+      print(glue("DIVIDES HAS {nrow(check_divs)} ROWS BUT DIVIDE-ATTRIBUTES HAS {nrow(check_attrs)}!!"))
+      stop()
+    }
+  }
+  
  
   ## Stop if .gpkg does not exist
 
@@ -355,23 +362,31 @@ run_driver <- function(gage_id = NULL,
   #streams <- read_sf(outfile, 'flowlines')
 
   ########################## MODELS' ATTRIBUTES ##################################
+  # STEP #4: Add models' attributes
+  ########################## MODELS' ATTRIBUTES ##################################
   # STEP #4: Add models' attributes from the parquet file to the geopackage
   # this TRUE will be changed once synchronized HF bugs are fixed
+  
+  if(compute_divide_attributes) {
+     #print layers before appending model attributes
+     layers_before_cfe_attr <- sf::st_layers(outfile)
+     print (layers_before_cfe_attr$name)
+     start.time <- Sys.time()
+  
+     d_attr <- GetModelAttributes(div_infile = outfile, hf_version = hf_version)
+  
+     time.taken <- as.numeric(Sys.time() - start.time, units = "secs") #end.time - start.time
+     print (paste0("Time (model attrs) = ", time.taken))
+   } else {
+     d_attr <- read_sf(outfile, 'divide-attributes')
+   }
 
-  # if(is.null(hf_source) | TRUE) {
-  #   print layers before appending model attributes
-  #   layers_before_cfe_attr <- sf::st_layers(outfile)
-  #   print (layers_before_cfe_attr$name)
-  #   start.time <- Sys.time()
-  # 
-  #   d_attr <- add_model_attributes(div_infile = outfile,
-  #                                  write_attr_parquet = write_attr_parquet)
-  #   
-  #   time.taken <- as.numeric(Sys.time() - start.time, units = "secs") #end.time - start.time
-  #   print (paste0("Time (model attrs) = ", time.taken))    
-  # } else {
-    d_attr <- read_sf(outfile, 'divide-attributes')
-  # }
+        
+  #if (hf_version == "2.2") {
+  #  d_attr <- read_sf(outfile, 'divide-attributes')
+  #} else if (hf_version == "2.1.1") {
+  #  d_attr <- read_sf(outfile, 'model-attributes')
+  #}
 
   # layers_after_cfe_attr <- sf::st_layers(outfile)
   #print (layers_after_cfe_attr$name)
@@ -381,17 +396,17 @@ run_driver <- function(gage_id = NULL,
   # Note: The default distribution = 'quantiles'
   
   start.time <- Sys.time()
-  dem_function(div_infile = outfile, dem_input_file, dem_output_dir)
+  GetDEM(div_infile = outfile, dem_input_file, dem_output_dir)
 
   time.taken <- as.numeric(Sys.time() - start.time, units = "secs") #end.time - start.time
   print (paste0("Time (dem func) = ", time.taken))
   
   print("STEP: Computing TWI and Width function .................")
   start.time <- Sys.time()
-  twi <- twi_function(div_infile = outfile, dem_output_dir = dem_output_dir, 
-                      distribution = 'simple', nclasses = 30)
+  twi <- ComputeTWI(div_infile = outfile, dem_output_dir = dem_output_dir, 
+                    distribution = 'simple', nclasses = 30)
   
-  width_dist <- width_function(div_infile = outfile, dem_output_dir = dem_output_dir)
+  width_dist <- ComputeWidth(div_infile = outfile, dem_output_dir = dem_output_dir)
   
   twi_dat_values = data.frame(ID = twi$divide_id, twi = twi$fun.twi, 
                               width_dist = width_dist$fun.downslope_fp_length)
@@ -428,8 +443,8 @@ run_driver <- function(gage_id = NULL,
   vel_gully       <- 0.2 # meter per second
   gully_threshold <- 30.0 # m (longest , closer to 10-30 m, Refs) 
   
-  giuh_compute <- giuh_function(div_infile = outfile, dem_output_dir = dem_output_dir, 
-                                vel_channel, vel_overland, vel_gully, gully_threshold)
+  giuh_compute <- ComputeGIUH(div_infile = outfile, dem_output_dir = dem_output_dir, 
+                              vel_channel, vel_overland, vel_gully, gully_threshold)
   
   #giuh_compute[2,] %>% t()
   
@@ -448,7 +463,7 @@ run_driver <- function(gage_id = NULL,
  
   print("STEP: Computing Nash Cascade parameters .............")
   start.time <- Sys.time()
-  nash_params_surface <- get_nash_params(giuh_dat_values, calib_n_k = FALSE)
+  nash_params_surface <- GetNashParams(giuh_dat_values, calib_n_k = FALSE)
   
   time.taken <- as.numeric(Sys.time() - start.time, units = "secs") #end.time - start.time
   print (paste0("Time (nash func) = ", time.taken))
@@ -456,32 +471,22 @@ run_driver <- function(gage_id = NULL,
   ####################### WRITE MODEL ATTRIBUTE FILE ###########################
   # STEP #8: Append GIUH, TWI, width function, and Nash cascade N and K parameters
   # to model attributes layers
+
   d_attr$giuh <- giuh_dat_values$giuh             # append GIUH column to the model attributes layer
+
   d_attr$twi  <- twi_dat_values$twi               # append TWI column to the model attributes layer
+
   d_attr$width_dist <- twi_dat_values$width_dist  # append width distribution column to the model attributes layer
+
   d_attr$N_nash_surface <- nash_params_surface$N_nash
+
   d_attr$K_nash_surface <- nash_params_surface$K_nash
+
   
-  if (!write_attr_parquet) {
-    # print('PRINTING MODEL ATTR NAMES')
-    # print(names(d_attr))
-    # model_attr_names <<- read.table(glue("{workflow_dir}/configs/basefiles/model_attribute_names.txt"),
-    #                                 header = TRUE)
-    # print('successfully read in model attr names example')
-    # print(model_attr_names$model_attr_names)
-    # 
-    # # Overwrite the names in d_attr with model_attr_names$model_attr_names
-    # names(d_attr) <- model_attr_names$model_attr_names
-    # print('successfully renamed model attr names')
-    # print(names(d_attr))
-    # print(names(d_attr) == model_attr_names$model_attr_names)
-    sf::st_write(d_attr, outfile,layer = "divide-attributes", append = FALSE)  
-  }
-  else {
-    #var = strsplit(outfile, "\\.")[[1]][1]
-    var = glue("{getwd()}/data")
-    attr_par_dir = glue("{var}/divide-attributes.parquet")
-    arrow::write_parquet(d_attr,attr_par_dir)
+  if (hf_version == "2.2") {
+    sf::st_write(d_attr, outfile,layer = "divide-attributes", append = FALSE)
+  } else if (hf_version == "2.1.1") {
+    sf::st_write(d_attr, outfile,layer = "model-attributes", append = FALSE)  
   }
 
 }

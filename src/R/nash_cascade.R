@@ -6,7 +6,7 @@
 # n : number of reservoirs
 # ksub : rate constant [1/hour]; determines the amount of water that can flow from one reservoir to another
 # time_h : time in hours (equal to the length of giuh array) 
-Nash_Cascade_Runoff <- function(rain_mm, nsubsteps, time_h, factor, N) {
+NashCascadeRunoff <- function(rain_mm, nsubsteps, time_h, factor, N) {
   
   n <- N   
   k <- 100  # this is fixed and determine the ksub, which is calibrated by using `factor`
@@ -68,7 +68,7 @@ Nash_Cascade_Runoff <- function(rain_mm, nsubsteps, time_h, factor, N) {
 # The 
 # if calib_n_k is set to TRUE, the code calibarates both Nash cascade parameters N and K 
 # default calib_n_k is FALSE, i.e. only calibrate K (one parameter)
-get_nash_params <- function(giuh_dat_values, calib_n_k = FALSE) {
+GetNashParams <- function(giuh_dat_values, calib_n_k = FALSE) {
   
   rainfall_input <- 15    ## mm rainfall (good point, make this to 1.0 and recover params)
   n_cats = length(giuh_dat_values$divide_id)
@@ -132,7 +132,7 @@ get_nash_params <- function(giuh_dat_values, calib_n_k = FALSE) {
         storage <- rep(0, N)
         
         # call to Nash cascade function that routes runoff and returns N, K, and other parameters
-        nash_dat <- Nash_Cascade_Runoff(rainfall_input, substeps, time_h, factor, N)
+        nash_dat <- NashCascadeRunoff(rainfall_input, substeps, time_h, factor, N)
         
         
         # store data in temporary locations; if N and K values are accepted

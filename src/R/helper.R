@@ -5,9 +5,9 @@
 # @date  February 05, 2024
 
 # Get the DEM
-dem_function <- function(div_infile,
-                         dem_input_file = NULL,
-                         dem_output_dir) {
+GetDEM <- function(div_infile,
+                   dem_input_file = NULL,
+                  dem_output_dir) {
   print ("DEM FUNCTION")
   print (glue("DEM file: ", dem_input_file))
   
@@ -136,13 +136,19 @@ corrected_distrib_func = function(value, coverage_fraction, breaks = 10, constra
 
 
 # Add model attribtes to the geopackage
-add_model_attributes <- function(div_infile, hf_version = 'v2.1.1', write_attr_parquet = FALSE) {
+GetModelAttributes <- function(div_infile, hf_version = '2.1.1') {
   print ("ADD MODEL ATTRIBUTES FUNCTION")
-  
-  base = 's3://lynker-spatial/hydrofabric/v2.1.1/nextgen/conus'
+  if (hf_version == "2.2") {
+    print ("TODO: add divide attributes for HF v2.2.. stopping")
+    stop()
+  }
+  else if (hf_version == "2.1.1"){
+    base = 's3://lynker-spatial/hydrofabric/v2.1.1/nextgen/conus'    
+  }
 
   # net has divide_id, id, and vupid that are used for filtering below
-  net = as_sqlite(div_infile, "network") 
+  #net = as_sqlite(div_infile, "network") 
+  net = hfsubsetR::as_ogr(div_infile, "network")
 
   # Courtesy of Mike Johnson
   print ("Extracting model-attributes from .parquet file on S3 bucket")
@@ -160,18 +166,11 @@ add_model_attributes <- function(div_infile, hf_version = 'v2.1.1', write_attr_p
   stopifnot(nrow(flowpath_attr) > 0)
   
   # Write the attributes to a new table in the hydrofabric subset GPKG
-  if (!write_attr_parquet) {
-    sf::st_write(model_attr, div_infile, layer = "model-attributes", append = FALSE)
-    sf::st_write(flowpath_attr, div_infile, layer = "flowpath-attributes", append = FALSE)    
-  }
-  else {
-    #var = strsplit(div_infile, "\\.")[[1]][1]
-    var = glue("{getwd()}/data")
-    attr_par_dir = glue("{var}/flowpath-attributes.parquet")
-    arrow::write_parquet(flowpath_attr,attr_par_dir)
-  }
 
+  sf::st_write(model_attr, div_infile, layer = "model-attributes", append = FALSE)
+  sf::st_write(flowpath_attr, div_infile, layer = "flowpath-attributes", append = FALSE)    
   
+
   return(model_attr)
   
   #### Method 2 - could be done this way too
@@ -179,11 +178,11 @@ add_model_attributes <- function(div_infile, hf_version = 'v2.1.1', write_attr_p
   #  select('id', 'divide_id', 'vpuid') |> 
   #  collect()
   
-  #model_attr <- open_dataset(glue('s3://lynker-spatial/hydrofabric/{hf_version}/nextgen/conus_model-attributes')) |>
+  #model_attr <- open_dataset(glue('s3://lynker-spatial/hydrofabric/v{hf_version}/nextgen/conus_model-attributes')) |>
   #  filter(vpuid %in% unique(net$vpuid), divide_id %in% unique(net$divide_id)) |> 
   #  collect() 
   
-  #flowpath_attr <- open_dataset(glue('s3://lynker-spatial/hydrofabric/{hf_version}/nextgen/conus_flowpath-attributes')) |>
+  #flowpath_attr <- open_dataset(glue('s3://lynker-spatial/hydrofabric/v{hf_version}/nextgen/conus_flowpath-attributes')) |>
   #  filter(vpuid %in% unique(net$vpuid), divide_id %in% unique(net$id)) |> 
   #  collect()
 }
