@@ -30,7 +30,6 @@
 # - set options for installing/reinstalling hydrofabric and other packages 
 # - set dem_infile (defaults to S3 .vrt file)
 # - set output_dir (geopackages and DEM files will be stored here)
-# - set hf_source (if sync'ed hydrofabric is available, set this path; defaults to S3 end point)
 
 # - reinstall_hydrofabric    # Defaults to FALSE. TRUE updates/overwrites the existing hydrofabric
 # - reinstall_arrow          # Defaults to FALSE. old arrow package or arrow installed without S3 support can cause issues, 
@@ -43,8 +42,8 @@
 library(yaml)
 args <- commandArgs(trailingOnly = TRUE)
 
-setup <-function() {
-  
+Setup <-function() {
+
   if (length(args) == 1) {
     infile_config = args
     print (paste0("Config file provided: ", infile_config))
@@ -59,36 +58,34 @@ setup <-function() {
     print ("Note: if running from RStudio, make sure infile_config points is set propely (line 54 in the main.R).")
     return(1)
   }
-  
+
   inputs = yaml.load_file(infile_config)
-  
-  workflow_dir      <<- inputs$workflow_dir
-  output_dir        <<- inputs$input_dir
-  hf_source         <<- inputs$gpkg_model_params$hf_source
-  hf_version        <<- inputs$gpkg_model_params$hf_version
-  hf_gpkg_path     <<- inputs$gpkg_model_params$hf_gpkg_path
-  nproc             <<- inputs$gpkg_model_params$number_processors
-  write_attr_parquet    <<- FALSE # clean it later AJK
 
-  source(paste0(workflow_dir, "/src_r/install_load_libs.R"))
-  source(glue("{workflow_dir}/src_r/custom_functions.R"))
+  workflow_dir   <<- inputs$workflow_dir
+  output_dir     <<- inputs$input_dir
+  hf_version     <<- inputs$subsetting$hf_version
+  hf_gpkg_path   <<- inputs$subsetting$hf_gpkg_path
+  nproc          <<- inputs$subsetting$number_processors
   
-  # dem_input_file        <<- get_param(inputs, "gpkg_model_params$dem_input_file", "s3://lynker-spatial/gridded-resources/dem.vrt")
+  source(paste0(workflow_dir, "/src/R/install_load_libs.R"))
+  source(glue("{workflow_dir}/src/R/custom_functions.R"))
+  
+  # dem_input_file        <<- get_param(inputs, "subsettings$dem_input_file", "s3://lynker-spatial/gridded-resources/dem.vrt")
   # Newer DEM, better for oCONUS and other previously problematic basins
-  dem_input_file        <<- get_param(inputs, "gpkg_model_params$dem_input_file", "s3://lynker-spatial/gridded-resources/USGS_seamless_13.vrt")
+  dem_input_file  <<- get_param(inputs, "subsetting$dem_input_file", "s3://lynker-spatial/gridded-resources/USGS_seamless_13.vrt")
 
-  dem_output_dir        <<- get_param(inputs, "gpkg_model_params$dem_output_dir", "")
+  dem_output_dir  <<- get_param(inputs, "subsetting$dem_output_dir", "")
   
-  use_gage_id   <<- get_param(inputs, "gpkg_model_params$options$use_gage_id$use_gage_id", FALSE)
-  gage_ids      <<- get_param(inputs, "gpkg_model_params$options$use_gage_id$gage_ids", NULL)
+  use_gage_id   <<- get_param(inputs, "subsetting$options$use_gage_id$use_gage_id", FALSE)
+  gage_ids      <<- get_param(inputs, "subsetting$options$use_gage_id$gage_ids", NULL)
   
-  use_gage_file <<- get_param(inputs, "gpkg_model_params$options$use_gage_file$use_gage_file", FALSE)
-  gage_file     <<- get_param(inputs, "gpkg_model_params$options$use_gage_file$gage_file", NULL)
-  column_name   <<- get_param(inputs, "gpkg_model_params$options$use_gage_file$column_name", "")
+  use_gage_file <<- get_param(inputs, "subsetting$options$use_gage_file$use_gage_file", FALSE)
+  gage_file     <<- get_param(inputs, "subsetting$options$use_gage_file$gage_file", NULL)
+  column_name   <<- get_param(inputs, "subsetting$options$use_gage_file$column_name", "")
   
-  use_gpkg      <<- get_param(inputs, "gpkg_model_params$options$use_gpkg$use_gpkg", FALSE)
-  gpkg_dir      <<- get_param(inputs, "gpkg_model_params$options$use_gpkg$gpkg_dir", NULL)
-  pattern       <<- get_param(inputs, "gpkg_model_params$options$use_gpkg$pattern", "Gage_")
+  use_gpkg      <<- get_param(inputs, "subsetting$options$use_gpkg$use_gpkg", FALSE)
+  gpkg_dir      <<- get_param(inputs, "subsetting$options$use_gpkg$gpkg_dir", NULL)
+  pattern       <<- get_param(inputs, "subsetting$options$use_gpkg$pattern", "Gage_")
   
   if (sum(use_gage_id, use_gage_file, use_gpkg) != 1){
     print(glue("setup error: one condition needs to be TRUE, user provided: \n
@@ -110,47 +107,39 @@ setup <-function() {
 }
 
 # call setup function to read parameters from config file
-result <- setup()
+tryCatch({
+  Setup() 
+}, error = function(e) {
+  message("Setup failed: ", e$message)
+  stop()
+})
 
-if (result){
-  stop("Setup failed!")
-} else {
-  print ("SETUP DONE!")
-}
+print ("SETUP DONE!")
+
 
 ################################ OPTIONS #######################################
 
 start_time <- Sys.time()
-if (use_gage_id == TRUE) {
+if (use_gage_id == TRUE || use_gage_file == TRUE) {
   ################################ EXAMPLE 1 ###################################
   # For this example either provide a gage ID or a file to read gage IDs from
   # Modify this part according your settings
   
+  if (use_gage_file == TRUE) {
+    d = read.csv(gage_file,colClasses = c("character")) 
+    gage_ids <- d[[column_name]]
+  }
+  
   stopifnot( length(gage_ids) > 0)
 
-  cats_failed <- driver_given_gage_IDs(gage_id = gage_ids, 
-                                       output_dir = output_dir, 
-                                       hf_source = hf_source,
-                                       nproc = nproc,
-                                       write_attr_parquet = write_attr_parquet,
-                                       dem_output_dir = dem_output_dir,
-                                       dem_input_file = dem_input_file
-                                       )
+  cats_failed <- DriverGivenGageIDs(gage_id = gage_ids, 
+                                    output_dir = output_dir,
+                                    nproc = nproc,
+                                    dem_output_dir = dem_output_dir,
+                                    dem_input_file = dem_input_file
+                                    )
   
   
-} else if (use_gage_file == TRUE) {
-  
-  d = read.csv(gage_file,colClasses = c("character")) 
-  gage_ids <- d[[column_name]]
-  
-  cats_failed <- driver_given_gage_IDs(gage_id = gage_ids, 
-                                       output_dir = output_dir, 
-                                       hf_source = hf_source,
-                                       nproc = nproc,
-                                       write_attr_parquet = write_attr_parquet,
-                                       dem_output_dir = dem_output_dir,
-                                       dem_input_file = dem_input_file
-                                       )
 } else if (use_gpkg == TRUE) {
 
   gage_files = list.files(gpkg_dir, full.names = TRUE, pattern = pattern)
@@ -158,12 +147,10 @@ if (use_gage_id == TRUE) {
   cats_failed <- driver_given_gpkg(gage_files = gage_files, 
                                    gpkg_dir = gpkg_dir, 
                                    output_dir = output_dir,
-                                   hf_source = NULL,
                                    nproc = nproc,
                                    dem_output_dir = dem_output_dir,
                                    dem_input_file = dem_input_file
                                    )
-  
 }
 
 
