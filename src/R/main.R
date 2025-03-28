@@ -67,8 +67,11 @@ Setup <-function() {
   hf_gpkg_path   <<- inputs$subsetting$hf_gpkg_path
   nproc          <<- inputs$subsetting$number_processors
   
+  
   source(paste0(workflow_dir, "/src/R/install_load_libs.R"))
   source(glue("{workflow_dir}/src/R/custom_functions.R"))
+  
+  compute_divide_attributes <<- get_param(inputs, "subsetting$compute_divide_attributes", TRUE)
   
   # dem_input_file        <<- get_param(inputs, "subsettings$dem_input_file", "s3://lynker-spatial/gridded-resources/dem.vrt")
   # Newer DEM, better for oCONUS and other previously problematic basins
@@ -136,7 +139,8 @@ if (use_gage_id == TRUE || use_gage_file == TRUE) {
                                     output_dir = output_dir,
                                     nproc = nproc,
                                     dem_output_dir = dem_output_dir,
-                                    dem_input_file = dem_input_file
+                                    dem_input_file = dem_input_file,
+                                    compute_divide_attributes = compute_divide_attributes
                                     )
   
   
@@ -149,7 +153,8 @@ if (use_gage_id == TRUE || use_gage_file == TRUE) {
                                    output_dir = output_dir,
                                    nproc = nproc,
                                    dem_output_dir = dem_output_dir,
-                                   dem_input_file = dem_input_file
+                                   dem_input_file = dem_input_file,
+                                   compute_divide_attributes = compute_divide_attributes
                                    )
 }
 

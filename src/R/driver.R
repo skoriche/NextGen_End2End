@@ -10,9 +10,11 @@ DriverGivenGageIDs <- function(gage_ids,
                                failed_dir = "failed_cats",
                                dem_input_file = NULL,
                                dem_output_dir = "",
+                               compute_divide_attributes = FALSE,
                                nproc = 1) {
   
   print ("DRIVER GIVEN GAGE ID")
+
   # create directory to stored catchment geopackage in case of errors or missing data
   failed_dir = "failed_cats"
   dir.create(failed_dir, recursive = TRUE, showWarnings = FALSE)
@@ -30,9 +32,9 @@ DriverGivenGageIDs <- function(gage_ids,
   #                               "libraries_lst",
   #                               "output_dir",
   #                               "failed_dir",
-  #                               "write_attr_parquet",
   #                               "dem_output_dir",
-  #                               "dem_input_file"
+  #                               "dem_input_file",
+  #                               "compute_divide_attributes",
   #                               ),
   #               envir = environment())
   
@@ -90,7 +92,8 @@ ProcessCatchmentID <- function(id, failed_dir) {
     cat ("Processing catchment: ", id, "\n")
     RunDriver(gage_id = id,
               dem_input_file = dem_input_file,
-              dem_output_dir = dem_dir
+              dem_output_dir = dem_dir,
+              compute_divide_attributes = compute_divide_attributes
               )
     
     failed <- FALSE
@@ -131,6 +134,7 @@ DriverGivenGPKG <- function(gage_files,
                             failed_dir = "failed_cats",
                             dem_output_dir = "",
                             dem_input_file = NULL,
+                            compute_divide_attributes = FALSE,
                             nproc = 1) {
   
   print ("DRIVER GIVEN GEOPACKAGE FUNCTION")
@@ -160,7 +164,7 @@ DriverGivenGPKG <- function(gage_files,
 #                                 "failed_dir",
 #                                 "gpkg_dir",
 #                                 "as_sqlite",
-# 				                        "write_attr_parquet",
+# 				                        "compute_divide_attributes",
 #                                 "dem_output_dir",
 # 				                        "dem_input_file"),
 #                 envir = environment())
@@ -232,7 +236,8 @@ ProcessGPKG <- function(gfile, failed_dir) {
     RunDriver(is_gpkg_provided = TRUE,
               loc_gpkg_file = local_gpkg_file,
               dem_output_dir = dem_dir,
-              dem_input_file = dem_input_file
+              dem_input_file = dem_input_file,
+              compute_divide_attributes = compute_divide_attributes
               )
       
     failed <- FALSE
@@ -271,11 +276,12 @@ RunDriver <- function(gage_id = NULL,
                       dem_input_file = NULL,
                       dem_output_dir,
                       loc_gpkg_file = "",
+                      compute_divide_attributes = FALSE,
                       twi_pre_computed_option = FALSE
                       ) {
 
   print ("RUN DRIVER FUNCTION")
-  
+
   outfile <- " "
   if(!is_gpkg_provided) {
     start.time <- Sys.time()
@@ -294,8 +300,6 @@ RunDriver <- function(gage_id = NULL,
       domain <- "conus"
     }
     
-    compute_divide_attributes <- TRUE
-    
     # If the gpkg exists, use that for subsetting
     if (hf_version == "2.2") {
       
@@ -307,14 +311,17 @@ RunDriver <- function(gage_id = NULL,
         hf_gpkg = NULL
       }
       
+      layers = c("divides", "flowlines", "network", "nexus",
+                 "flowpath-attributes","model-attributes")
+      if (compute_divide_attributes) {
+          layers = c("divides", "flowlines", "network", "nexus")
+      }
       
       hfsubsetR::get_subset(hl_uri = glue("gages-{gage_id}"),
                             outfile = outfile,
                             gpkg = hf_gpkg,
                             hf_version = hf_version,
-                            lyrs = c("divides", "flowpaths", "network", "nexus",
-                                     "flowpath-attributes",
-                                     "divide-attributes"),
+                            lyrs = layers,
                             type = 'nextgen',
                             overwrite = TRUE)
     } else if (hf_version == "2.1.1") {
@@ -348,7 +355,6 @@ RunDriver <- function(gage_id = NULL,
       stop()
     }
   }
-  
  
   ## Stop if .gpkg does not exist
 
@@ -366,7 +372,7 @@ RunDriver <- function(gage_id = NULL,
   ########################## MODELS' ATTRIBUTES ##################################
   # STEP #4: Add models' attributes from the parquet file to the geopackage
   # this TRUE will be changed once synchronized HF bugs are fixed
-  
+
   if(compute_divide_attributes) {
      #print layers before appending model attributes
      layers_before_cfe_attr <- sf::st_layers(outfile)
@@ -381,7 +387,6 @@ RunDriver <- function(gage_id = NULL,
      d_attr <- read_sf(outfile, 'divide-attributes')
    }
 
-        
   #if (hf_version == "2.2") {
   #  d_attr <- read_sf(outfile, 'divide-attributes')
   #} else if (hf_version == "2.1.1") {
