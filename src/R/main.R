@@ -71,7 +71,7 @@ Setup <-function() {
   source(paste0(workflow_dir, "/src/R/install_load_libs.R"))
   source(glue("{workflow_dir}/src/R/custom_functions.R"))
   
-  compute_divide_attributes <<- get_param(inputs, "subsetting$compute_divide_attributes", TRUE)
+  compute_divide_attributes <<- get_param(inputs, "subsetting$compute_divide_attributes", FALSE)
   
   # dem_input_file        <<- get_param(inputs, "subsettings$dem_input_file", "s3://lynker-spatial/gridded-resources/dem.vrt")
   # Newer DEM, better for oCONUS and other previously problematic basins
