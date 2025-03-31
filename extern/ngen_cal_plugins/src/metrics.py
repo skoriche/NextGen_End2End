@@ -54,7 +54,7 @@ class ComputeMetrics:
 
     @hookimpl(wrapper=True)
     def ngen_cal_model_output(
-        self, id: str | None
+        self, nexus: Nexus
     ) -> typing.Generator[None, pd.Series, pd.Series]:
         # In short, all registered `ngen_cal_model_output` hooks run
         # before `yield` and the results are sent as the result to `yield`

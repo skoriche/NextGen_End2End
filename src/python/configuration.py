@@ -799,7 +799,7 @@ class ConfigurationCalib:
         d['model']['routing_output'] = self.troute_output_file
 
         gage_id = self.get_flowpath_attributes()
-
+        """
         if len(gage_id) == 1:
             d['model']['eval_feature'] = gage_id[0]
         else:
@@ -810,6 +810,9 @@ class ConfigurationCalib:
             df.set_index(index, inplace=True)
             idmax = df['tot_drainage_areasqkm'].idxmax()
             d['model']['eval_feature'] = idmax
+        """
+
+        d['model']['eval_feature'] = gpkg_name.split("_")[1]
 
         if self.num_proc > 1:
             d['model']['parallel'] = self.num_proc
