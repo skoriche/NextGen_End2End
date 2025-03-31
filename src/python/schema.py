@@ -57,11 +57,13 @@ def get_schema_model_attributes(gdf_model):
             df['gw_Zmax'] = d
         if 'Expon' in d:
             df['gw_Expon'] = d
+
         if 'slope' in d:
-            if 'slope_mean' in d:
+            if 'slope_mean' == d or 'mean.slope' == d:
                 df['slope_mean'] = d
-            else:
+            elif 'slope' == d or 'mean.slope_1km' == d:
                 df['soil_slope'] = d
+
         if 'elevation' in d:
             df['elevation_mean'] = d
 
