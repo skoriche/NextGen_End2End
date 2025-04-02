@@ -1,32 +1,42 @@
-# Author : Ahmad Jan Khattak
-# Email  : ahmad.jan@noaa.gov
-# Date   : September 10, 2024
+###############################################################
+# Author : Ahmad Jan Khattak [ahmad.jan.khattak@noaa.gov | September 10, 2024]
+# Contributor : Sifan A. Koriche [sakoriche@ua.edu | December 18, 2024]
 
-# Note: run this script from ngen base directory
+# If running on AWS EC2 instance, run setup_ec2_4ngen.sh before bulding models to setup the EC2 instance
+
+# Clone NextGenSandboxHub and NextGen GitHub repositories
+# Step 1: Clone NextGenSandboxHub
+#         - git clone https://github.com/ajkhattak/NextGenSandboxHub && cd NextGenSandboxHub
+# Step 2: Clone NextGen
+#         - git clone https://github.com/NOAA-OWP/ngen && cd ngen
+#         - git submodule update --init --recursive
+
+
+# Order of building options
+# 1st build T-ROUTE >> this helps to create t-route based environment which will also be handy for NGEN
+# 2nd build NGEN
+# 3rd build MODELS
+# 4th build WORKFLOW
+###############################################################
 
 export wkdir=$(pwd)
 export builddir="cmake_build"
-
 cd ${wkdir}
 
-# Step 1. Clone NextGenSandboxHub repo
-# git clone https://github.com/ajkhattak/NextGenSandboxHub && cd NextGenSandboxHub
 
 #####################################################
 # Step 2.
 # Set Options and the following dir paths
 
+BUILD_TROUTE=ON
 BUILD_NGEN=OFF
-BUILD_TROUTE=OFF
 BUILD_MODELS=OFF
-BUILD_WORKFLOW=ON
+BUILD_WORKFLOW=OFF
 
 ngen_dir=<path_to_ngen>
 sandboxhub_dir=<path_to_sandboxhub>
 
 # Notes:
-# 1. If ngen has already been clone and submodules updated
-#    comment out the 2 lines below pushd $ngen_dir in the build_ngen block
 # 2. If vevn_forcing failed or forcing downloader is failing, that could be due to inconsistent
 #    versions of packages, try buidling env based on doc/env/venv_forcing.piplist
 #    
@@ -35,9 +45,7 @@ sandboxhub_dir=<path_to_sandboxhub>
 build_ngen()
 {
     pushd $ngen_dir
-    git clone https://github.com/NOAA-OWP/ngen && cd ngen
-    git submodule update --init --recursive
-    
+
     rm -rf ${builddir}
     cmake -DCMAKE_BUILD_TYPE=Release \
 	  -DNGEN_WITH_BMI_FORTRAN=ON \
