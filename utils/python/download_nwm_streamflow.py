@@ -52,7 +52,7 @@ def get_stream_discharge(gage_id, start_time, end_time):
 if __name__ == "__main__":
 
 
-     try:
+    try:
         parser = argparse.ArgumentParser()
         parser.add_argument("-gid", dest="gage_id",    type=str, required=True,  help="USGS gage ID")
         parser.add_argument("-s",   dest="start_rime", type=str, required=True,  help="start time")
