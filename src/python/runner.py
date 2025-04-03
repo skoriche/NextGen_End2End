@@ -36,7 +36,7 @@ class Runner:
             infile = os.path.join(self.output_dir, "basins_passed.csv")
             indata = pd.read_csv(infile, dtype=str)
             pool = multiprocessing.Pool(processes=self.basins_in_par)
-            tuple_list = list(zip(indata["basin_id"], indata['n_cats']))
+            tuple_list = list(zip(indata["gage_id"], indata['num_divides']))
             results = pool.map(self.run_ngen_with_calibration, tuple_list)
             pool.close()
             pool.join()
@@ -77,22 +77,13 @@ class Runner:
                 raise ValueError("ngen_cal_type is restart, however, restart_dir is None. It must be set to a valid directory.")
             if not self.restart_dir:
                 raise FileNotFoundError(f"restart_dir does not exist, provided {self.restart_dir}.")
-    """
-    def driver_ngen_with_calibration(self):
-        infile = os.path.join(self.output_dir, "basins_passed.csv")
-        indata = pd.read_csv(infile, dtype=str)
-        pool = multiprocessing.Pool(processes=self.basins_in_par)
-        tuple_list = list(zip(indata["basin_id"], indata['n_cats']))
-        results = pool.map(self.run_ngen_with_calibration, tuple_list)
-        pool.close()
-        pool.join()
-    """ 
+
     def run_ngen_without_calibration(self):
         infile = os.path.join(self.output_dir, "basins_passed.csv")
         indata = pd.read_csv(infile, dtype=str)
         ngen_exe = os.path.join(self.ngen_dir, "cmake_build/ngen")
 
-        for id, ncats in zip(indata["basin_id"], indata['n_cats']):
+        for id, ncats in zip(indata["gage_id"], indata['num_divides']):
             ncats = int(ncats)
             o_dir = self.output_dir / id
             i_dir = Path(self.input_dir) / id
