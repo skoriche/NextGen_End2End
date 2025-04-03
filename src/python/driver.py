@@ -184,25 +184,7 @@ class Driver:
 
         return basin_ids, num_cats
         #quit()
-        """
-        driver = f'python {workflow_driver -gpkg {gpkg_dir} -ngen {self.ngen_dir} -f {f_dir} \
-        -o {config_dir} -m {self.model_option} -p {self.precip_partitioning_scheme} -r {self.surface_runoff_scheme} -t \'{self.simulation_time}\' \
-        -netcdf {self.is_netcdf_forcing} -troute {self.is_routing} -routfile {routing_file} -json {json_dir} -v {self.verbosity} \
-        -ncal {self.ngen_cal_type} -sout {sim_output_dir} -schema {self.schema_type}'
         
-        failed = subprocess.call(driver, shell=True)
-        
-        if not failed:
-            basin_ids.append(gpkg_id)
-            x = gpd.read_file(gpkg_dir, layer="divides")
-            num_cats.append(len(x["divide_id"]))
-
-        if self.verbosity >= 1:
-            result = "Passed" if not failed else "Failed"
-            print(self.colors.GREEN + "  %s " % result + self.colors.END)
-
-        return basin_ids, num_cats
-        """
     def main(self, nproc=4):
         basins_passed = os.path.join(self.output_dir, "basins_passed.csv")
 
@@ -226,7 +208,7 @@ class Driver:
         with open(basins_passed, 'w', newline='') as file:
             dat = zip(basin_ids, num_cats)
             writer = csv.writer(file)
-            writer.writerow(['basin_id', 'n_cats'])
+            writer.writerow(['gage_id', 'num_divides'])
             writer.writerows(dat)
 
         pool.close()
