@@ -10,8 +10,8 @@ output_dir    : "<path_to_output_dir>" ! user-specified
 subsetting :
   hf_version               : "2.2" # Only enter version number, e.g. "2.2" or "2.1.1"
   # Ensure that this gpkg matches the hf_version specified above:
-  hf_gpkg_path             : "/Users/ahmadjan/Core/input_data/hf2.2_gpkgs/conus_nextgen.gpkg"
-  dem_output_dir           : "/Users/ahmadjan/Core/projects/testing/input/dem" # create `dem` directory yourself
+  hf_gpkg_path             : "<path_to_HF_gpkg_file>"  #for example, "<paht_to>/conus_nextgen.gpkg"
+  dem_output_dir           : "<path_to_input_dir>/dem" # create `dem` directory yourself
   number_processors        : 1
 
   # Note: only gage_ids that fall within the domain of the hydrofabric listed above will be subsetted
@@ -37,16 +37,16 @@ forcings :
 
 ########################################################################
 formulation :
-  ngen_dir           : "/Users/ahmadjan/codes/ngen/ngen"
-  models                     : "NOM, CFE, T-route"
+  ngen_dir           : "<path_to_ngen_dir>" # for instance, /Users/ajkhattak/codes/ngen_repo/ngen"
+  models             : "NOM, CFE, T-route"
 
-  clean                      : ['existing']
-  setup_simulation           : True
-  verbosity                  : 0
+  clean              : ['existing']
+  setup_simulation   : True
+  verbosity          : 0
 
-  np_per_basin               : 1         # number of processors for basin partitioning
-  np_per_basin_adaptive      : False     # adaptive - set by the workflow
-  basins_in_par              : 1         # use for both config files and simulations
+  np_per_basin           : 1         # number of processors for basin partitioning
+  np_per_basin_adaptive  : False     # adaptive - set by the workflow
+  basins_in_par          : 1         # use for both config files and simulations
 
 simulation :
   task_type : "<pick_option>" # calibvalid, calibration, validation, restart, None
@@ -54,5 +54,5 @@ simulation :
   calib_eval_time  : '{"start_time" : "2017-10-01 00:00:00", "end_time" : "2021-09-30 23:00:00"}'
   validation_time  : '{"start_time" : "2010-11-22 14:00:00", "end_time" : "2010-12-23 02:00:00"}'
   valid_eval_time  : '{"start_time" : "2010-11-23 14:00:00", "end_time" : "2010-12-23 02:00:00"}'
-  restart_dir      : "/Users/ahmadjan/Core/SimulationsData/projects/test_basins/{*}/202410042024_ngen_qaiklwj0_worker/"
+  restart_dir      : "<path_to_restart_dir>/{*}/202410042024_ngen_qaiklwj0_worker/" # TODO
   
