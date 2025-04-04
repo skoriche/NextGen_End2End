@@ -32,7 +32,7 @@ class Runner:
             print("Running NextGen without calibration ...")
             self.run_ngen_without_calibration()
         else:
-            print(f'Running NextGen with {self.ngen_cal_type}')
+            print(f'Running NextGen with task_type {self.ngen_cal_type}')
             infile = os.path.join(self.output_dir, "basins_passed.csv")
             indata = pd.read_csv(infile, dtype=str)
             pool = multiprocessing.Pool(processes=self.basins_in_par)
@@ -40,7 +40,6 @@ class Runner:
             results = pool.map(self.run_ngen_with_calibration, tuple_list)
             pool.close()
             pool.join()
-            print ("Run done")
 
 
     def load_configuration(self):
@@ -58,17 +57,29 @@ class Runner:
         self.np_per_basin_adaptive = int(dformul.get('np_per_basin_adaptive', True))
 
         dsim = self.config['simulation']
-        self.ngen_cal_type = dsim.get('task_type', None)
+        self.ngen_cal_type = dsim.get('task_type', 'control')
         self.calibration_time = pd.NaT
         self.validation_time = pd.NaT
 
         if self.ngen_cal_type in ['calibration', 'calibvalid']:
-            self.calibration_time = json.loads(dsim["calibration_time"])
-            self.calib_eval_time = json.loads(dsim["calib_eval_time"])
+            if "calibration_time" not in dsim or not isinstance(dsim["calibration_time"], dict):
+                raise ValueError("calibration_time is not provided or is not a valid dictionary.")
+
+            if "calib_eval_time" not in dsim or not isinstance(dsim["calib_eval_time"], dict):
+                raise ValueError("calib_eval_time is not provided or is not a valid dictionary.")
+
+            self.calibration_time = dsim["calibration_time"]
+            self.calib_eval_time  = dsim["calib_eval_time"]
 
         if self.ngen_cal_type in ['validation', 'calibvalid']:
-            self.validation_time = json.loads(dsim["validation_time"])
-            self.valid_eval_time = json.loads(dsim["valid_eval_time"])
+            if "calibration_time" not in dsim or not isinstance(dsim["calibration_time"], dict):
+                raise ValueError("calibration_time is not provided or is not a valid dictionary.")
+
+            if "calib_eval_time" not in dsim or not isinstance(dsim["calib_eval_time"], dict):
+                raise ValueError("calib_eval_time is not provided or is not a valid dictionary.")
+            
+            self.validation_time = dsim["validation_time"]
+            self.valid_eval_time = dsim["valid_eval_time"]
 
         self.restart_dir = "./"
         if self.ngen_cal_type == 'restart':

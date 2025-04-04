@@ -49,10 +49,10 @@ formulation :
   basins_in_par          : 1         # use for both config files and simulations
 
 simulation :
-  task_type : "<pick_option>" # calibvalid, calibration, validation, restart, None
-  calibration_time : '{"start_time" : "2016-10-01 00:00:00", "end_time" : "2021-09-30 23:00:00"}'
-  calib_eval_time  : '{"start_time" : "2017-10-01 00:00:00", "end_time" : "2021-09-30 23:00:00"}'
-  validation_time  : '{"start_time" : "2010-11-22 14:00:00", "end_time" : "2010-12-23 02:00:00"}'
-  valid_eval_time  : '{"start_time" : "2010-11-23 14:00:00", "end_time" : "2010-12-23 02:00:00"}'
+  task_type : "<pick_option>" # calibvalid, calibration, validation, restart, control
+  calibration_time : {"start_time" : "2016-10-01 00:00:00", "end_time" : "2021-09-30 23:00:00"}
+  calib_eval_time  : {"start_time" : "2017-10-01 00:00:00", "end_time" : "2021-09-30 23:00:00"}
+  validation_time  : {"start_time" : "2010-11-22 14:00:00", "end_time" : "2010-12-23 02:00:00"}
+  valid_eval_time  : {"start_time" : "2010-11-23 14:00:00", "end_time" : "2010-12-23 02:00:00"}
   restart_dir      : "<path_to_restart_dir>/{*}/202410042024_ngen_qaiklwj0_worker/" # TODO
   

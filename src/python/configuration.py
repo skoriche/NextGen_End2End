@@ -37,7 +37,7 @@ class ConfigurationGenerator:
         self.output_dir = output_dir
         self.ngen_dir = ngen_dir
         self.formulation = formulation
-        self.simulation_time = json.loads(simulation_time)
+        self.simulation_time = simulation_time
         self.verbosity = verbosity
         #self.json_dir = json_dir
         #self.sim_output_dir = sim_output_dir
@@ -643,7 +643,7 @@ class ConfigurationGenerator:
         if self.ngen_cal_type in ['calibration', 'validation', 'calibvalid', 'restart']:
             d['compute_parameters']['forcing_parameters']['qlat_input_folder'] = "./"
         else:
-            d['compute_parameters']['forcing_parameters']['qlat_input_folder'] = os.path.join(self.output_dir, "div")
+            d['compute_parameters']['forcing_parameters']['qlat_input_folder'] = os.path.join(self.output_dir, "outputs/div")
 
         d['compute_parameters']['forcing_parameters']['qlat_file_pattern_filter'] = "nex-*"
         del d['compute_parameters']['forcing_parameters']['binary_nexus_file_folder']
@@ -664,7 +664,7 @@ class ConfigurationGenerator:
         else:
             stream_output = {
                 "stream_output": {
-                    'stream_output_directory': os.path.join(self.output_dir, "troute"),
+                    'stream_output_directory': os.path.join(self.output_dir, "outputs/troute"),
                     'stream_output_time': -1,
                     'stream_output_type': '.nc',
                     'stream_output_internal_frequency': 60

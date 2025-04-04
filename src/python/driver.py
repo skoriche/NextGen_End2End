@@ -57,16 +57,28 @@ class Driver:
             self.is_netcdf_forcing = False
 
         dsim = d['simulation']
-        self.ngen_cal_type = dsim.get('task_type', None)
-        
-        if self.ngen_cal_type == 'calibration' or self.ngen_cal_type == 'calibvalid':
-            self.simulation_time = dsim["calibration_time"]
-            self.calib_eval_time = dsim["calib_eval_time"]
+        self.ngen_cal_type = (dsim.get('task_type', 'control')).lower()
 
+        if self.ngen_cal_type == 'calibration' or self.ngen_cal_type == 'calibvalid':
+            if "calibration_time" not in dsim or not isinstance(dsim["calibration_time"], dict):
+                raise ValueError("calibration_time is not provided or is not a valid dictionary.")
+            
+            self.simulation_time = dsim["calibration_time"]
+            #self.calib_eval_time = dsim["calib_eval_time"]
         elif self.ngen_cal_type == 'validation':
+            if "validation_time" not in dsim or not isinstance(dsim["validation_time"], dict):
+                raise ValueError("validation_time is not provided or is not a valid dictionary.")
+
             self.simulation_time = dsim["validation_time"]
-            self.valid_eval_time = dsim["valid_eval_time"]
-    
+            #self.valid_eval_time = dsim["valid_eval_time"]
+        elif self.ngen_cal_type == 'control':
+            if "simulation_time" not in dsim or not isinstance(dsim["simulation_time"], dict):
+                raise ValueError("simulation_time is not provided or is not a valid dictionary.")
+            
+            self.simulation_time = dsim["simulation_time"]
+        else:
+            raise ValueError("Not a valid task_type provided: valid options are [control, calibration, validation, calibvalid, restart]")
+        
     def process_clean_input_param(self, clean):
         clean_lst = []
         if isinstance(clean, str):

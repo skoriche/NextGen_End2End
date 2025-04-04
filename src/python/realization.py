@@ -30,7 +30,7 @@ class RealizationGenerator:
         self.forcing_dir = forcing_dir
         self.output_dir = output_dir
         self.formulation = formulation
-        self.simulation_time = json.loads(simulation_time)
+        self.simulation_time = simulation_time
         self.config_dir = os.path.join(output_dir,"configs")
         self.forcing_format = forcing_format
         self.verbosity = verbosity
