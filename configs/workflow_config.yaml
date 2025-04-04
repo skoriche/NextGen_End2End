@@ -2,6 +2,7 @@
 
 workflow_dir  : "<path_to>/NextGenSandboxHub"
 input_dir     : "<path_to_input_dir>" ! user-specified
+output_dir    : "<path_to_output_dir>" ! user-specified
 
 
 ########################################################################
