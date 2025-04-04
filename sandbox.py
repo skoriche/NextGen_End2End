@@ -29,11 +29,11 @@ formulations_supported = [
     "BASELINE,LAS"
 ]
 
-def Sandbox(config_workflow, config_calib):
+def Sandbox(workflow_config, calib_config):
     
     if (args.gpkg):
         print ("Generating geopackages...")
-        generate_gpkg = f"Rscript {workflow_dir}/src/R/main.R {config_workflow}"
+        generate_gpkg = f"Rscript {workflow_dir}/src/R/main.R {workflow_config}"
         status = subprocess.call(generate_gpkg,shell=True)
 
         if (status):
@@ -43,7 +43,7 @@ def Sandbox(config_workflow, config_calib):
 
     if (args.forc):
         print ("Generating forcing data...")
-        _forcing = forcing.ForcingProcessor(config_workflow)
+        _forcing = forcing.ForcingProcessor(workflow_config)
         status   = _forcing.download_forcing()
 
         if (status):
@@ -53,7 +53,7 @@ def Sandbox(config_workflow, config_calib):
 
     if (args.conf):
         print ("Generating config files...")
-        _driver = driver.Driver(config_workflow, formulations_supported)
+        _driver = driver.Driver(workflow_config, formulations_supported)
         status  = _driver.run()
 
         if (status):
@@ -64,7 +64,7 @@ def Sandbox(config_workflow, config_calib):
     if (args.run):
         print ("Calling Runner...")
 
-        _runner = runner.Runner(config_workflow, config_calib)
+        _runner = runner.Runner(workflow_config, calib_config)
         status  = _runner.run()
 
         if (status):
@@ -93,24 +93,24 @@ if __name__ == "__main__":
 
     if (args.workflow_infile):
         if (os.path.exists(args.workflow_infile)):
-            config_workflow = Path(args.workflow_infile).resolve()
+            workflow_config = Path(args.workflow_infile).resolve()
         else:
             print ("workflow config file DOES NOT EXIST, provided: ", args.workflow_infile)
             sys.exit(0)
     else:
-        config_workflow = f"{workflow_dir}/configs/config_workflow.yaml"
+        workflow_config = f"{workflow_dir}/configs/workflow_config.yaml"
 
     if (args.calib_infile):
         if (os.path.exists(args.calib_infile)):
-            config_calib = Path(args.calib_infile).resolve()
+            calib_config = Path(args.calib_infile).resolve()
         else:
             print ("caliberation config file DOES NOT EXIST, provided: ", args.calib_infile)
             sys.exit(0)
     else:
-        config_calib = f"{workflow_dir}/configs/config_calib.yaml"
+        calib_config = f"{workflow_dir}/configs/calib_config.yaml"
     
     if (len(sys.argv) < 2):
         print ("No arguments are provide")
         sys.exit(0)
     
-    Sandbox(config_workflow, config_calib)
+    Sandbox(workflow_config, calib_config)

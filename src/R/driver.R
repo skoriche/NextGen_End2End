@@ -310,13 +310,14 @@ RunDriver <- function(gage_id = NULL,
         print('USING REMOTE GPKG FILE FOR SUBSETTING')
         hf_gpkg = NULL
       }
-      
-      layers = c("divides", "flowlines", "network", "nexus",
-                 "flowpath-attributes","model-attributes")
+
+      layers = c("divides", "flowpaths", "network", "nexus",
+                 "flowpath-attributes","divide-attributes")
+
       if (compute_divide_attributes) {
-          layers = c("divides", "flowlines", "network", "nexus")
+          layers = c("divides", "flowpaths", "network", "nexus")
       }
-      
+
       hfsubsetR::get_subset(hl_uri = glue("gages-{gage_id}"),
                             outfile = outfile,
                             gpkg = hf_gpkg,
