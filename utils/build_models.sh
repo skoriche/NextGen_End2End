@@ -2,7 +2,7 @@
 # Author : Ahmad Jan Khattak [ahmad.jan.khattak@noaa.gov | September 10, 2024]
 # Contributor : Sifan A. Koriche [sakoriche@ua.edu | December 18, 2024]
 
-# If running on AWS EC2 instance, run setup_ec2_4ngen.sh before bulding models to setup the EC2 instance
+# If running on AWS EC2 instance, run setup_ec2.sh before bulding models to setup the EC2 instance
 
 # Clone NextGenSandboxHub and NextGen GitHub repositories
 # Step 1: Clone NextGenSandboxHub
@@ -10,7 +10,8 @@
 # Step 2: Clone NextGen
 #         - git clone https://github.com/NOAA-OWP/ngen && cd ngen
 #         - git submodule update --init --recursive
-
+# Step 3: Setup bash file
+#         - Refer to the instructions here: (utils/setup_ec2.sh, line 23)
 
 # Order of building options
 # 1st build T-ROUTE >> this helps to create t-route based environment which will also be handy for NGEN
