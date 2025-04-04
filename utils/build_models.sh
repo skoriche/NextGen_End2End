@@ -24,10 +24,7 @@ export wkdir=$(pwd)
 export builddir="cmake_build"
 cd ${wkdir}
 
-
 #####################################################
-# Step 2.
-# Set Options and the following dir paths
 
 BUILD_TROUTE=ON
 BUILD_NGEN=OFF
@@ -38,9 +35,8 @@ ngen_dir=<path_to_ngen>
 sandboxhub_dir=<path_to_sandboxhub>
 
 # Notes:
-# 2. If vevn_forcing failed or forcing downloader is failing, that could be due to inconsistent
-#    versions of packages, try buidling env based on doc/env/venv_forcing.piplist
-#    
+# If vevn_forcing failed or forcing downloader is failing, that could be due to inconsistent
+# versions of packages, try buidling env based on doc/env/venv_forcing.piplist
 #####################################################
 
 build_ngen()
