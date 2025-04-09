@@ -18,6 +18,7 @@ import numpy as np
 import fiona
 import yaml
 import platform
+import math
 from pathlib import Path
 
 try:
@@ -94,12 +95,14 @@ class ConfigurationGenerator:
         gdf_soil['gw_Zmax'] = gdf_soil[params['gw_Zmax']].fillna(0.01)
         gdf_soil['gw_Coeff'] = gdf_soil[params['gw_Coeff']].fillna(1.8e-05)
         gdf_soil['gw_Expon'] = gdf_soil[params['gw_Expon']].fillna(6.0)
-        gdf_soil['soil_slope'] = gdf_soil[params['soil_slope']].fillna(1.0)
+        gdf_soil['slope_1km'] = gdf_soil[params['slope_1km']].fillna(1.0)
         gdf_soil['ISLTYP'] = gdf_soil[params['ISLTYP']].fillna(1).astype(int)
         gdf_soil['IVGTYP'] = gdf_soil[params['IVGTYP']].fillna(1).astype(int)
         gdf_soil['gw_Zmax'] = gdf_soil['gw_Zmax'] / 1000.0
         gdf_soil['gw_Coeff'] = gdf_soil['gw_Coeff'] * 3600 / (7.337700 * 1000 * 1000)
         gdf_soil['elevation_mean'] = gdf_soil[params['elevation_mean']].fillna(4)
+        gdf_soil['slope_mean'] = gdf_soil[params['slope_mean']].fillna(1.0)
+        gdf_soil['aspect_mean'] = gdf_soil[params['aspect_mean']].fillna(1.0)
 
         if self.schema_type == 'dangermond':
             gdf_soil['elevation_mean'] = gdf_soil['elevation_mean'] / 100.0
@@ -113,7 +116,7 @@ class ConfigurationGenerator:
         gdf['soil_b'] = gdf_soil['soil_b'].copy()
         gdf['soil_satdk'] = gdf_soil['soil_dksat'].copy()
         gdf['soil_satpsi'] = gdf_soil['soil_psisat'].copy()
-        gdf['soil_slop'] = gdf_soil['soil_slope'].copy()
+        gdf['soil_slop'] = gdf_soil['slope_1km'].copy()
         gdf['soil_smcmax'] = gdf_soil['soil_smcmax'].copy()
         gdf['soil_wltsmc'] = gdf_soil['soil_smcwlt'].copy()
         gdf['soil_refkdt'] = gdf_soil['soil_refkdt'].copy()
@@ -123,6 +126,8 @@ class ConfigurationGenerator:
         gdf['ISLTYP'] = gdf_soil['ISLTYP'].copy()
         gdf['IVGTYP'] = gdf_soil['IVGTYP'].copy()
         gdf['elevation_mean'] = gdf_soil['elevation_mean'].copy()
+        gdf['slope_mean'] = gdf_soil['slope_mean'].copy()
+        gdf['aspect_mean'] = gdf_soil['aspect_mean'].copy()
 
         mask = gdf['soil_b'].gt(0.0)
         min_value = gdf['soil_b'][mask].min()
@@ -151,15 +156,22 @@ class ConfigurationGenerator:
 
         return gdf, catids
 
-
     def write_nom_input_files(self):
-        nom_dir = os.path.join(self.output_dir,"configs/nom")
+        nom_dir = os.path.join(self.output_dir,"configs/noahowp")
         self.create_directory(nom_dir)
         
         # copy NOM params dir 
         str_sub ="cp -r "+ self.soil_params_NWM_dir + " %s"%nom_dir
         out=subprocess.call(str_sub,shell=True)
         
+        nom_basefile = os.path.join(self.workflow_dir, "configs/basefiles/config_noahowp.input")
+
+        if not os.path.exists(nom_basefile):
+            sys.exit(f"Sample NoahOWP file does not exist, provided is {nom_basefile}")
+
+        # Read infile line by line
+        with open(nom_basefile, 'r') as infile:
+            lines = infile.readlines()
 
         start_time = pd.Timestamp(self.simulation_time['start_time']).strftime("%Y%m%d%H%M")
         end_time = pd.Timestamp(self.simulation_time['end_time']).strftime("%Y%m%d%H%M")
@@ -170,94 +182,39 @@ class ConfigurationGenerator:
             centroid_y = str(self.gdf['geometry'][cat_name].centroid.y)
             soil_type = str(self.gdf.loc[cat_name]['ISLTYP'])
             veg_type = str(self.gdf.loc[cat_name]['IVGTYP'])
+            aspect = str(self.gdf.loc[cat_name]['aspect_mean'])
+            slope  = self.gdf.loc[cat_name]['slope_mean']/100. # convert percent to ratio
+            slope_deg = math.degrees(math.atan(slope)) # convert radian to degrees
 
-            timing = [
-                "&timing                                   ! and input/output paths",
-                "  dt                 = 3600.0             ! timestep [seconds]",
-                f"  startdate          = \"{start_time}\"             ! UTC time start of simulation (YYYYMMDDhhmm)",
-                f"  enddate            = \"{end_time}\"             ! UTC time end of simulation (YYYYMMDDhhmm)",
-                f"  forcing_filename   = \"{os.path.join(self.forcing_dir, cat_name)}.csv\"         ! file containing forcing data",
-                f"  output_filename    = \"output-{cat_name}.csv\"",
-                "/\n"
-            ]
-
-            params = [
-                "&parameters",
-                f"  parameter_dir      = \"{os.path.join(nom_dir, 'parameters')}\"  ! location of input parameter files",
-                "  general_table      = \"GENPARM.TBL\"                ! general param tables and misc params",
-                "  soil_table         = \"SOILPARM.TBL\"               ! soil param table",
-                "  noahowp_table      = \"MPTABLE.TBL\"                ! model param tables (includes veg)",
-                "  soil_class_name    = \"STAS\"                       ! soil class data source - STAS or STAS-RUC",
-                "  veg_class_name     = \"MODIFIED_IGBP_MODIS_NOAH\"   ! vegetation class data source - MODIFIED_IGBP_MODIS_NOAH or USGS",
-                "/\n"
-            ]
-
-            location = [
-                "&location                                         ! for point runs",
-                f"  lat              = {centroid_y}                           ! latitude [degrees]  (-90 to 90)",
-                f"  lon              = {centroid_x}                           ! longitude [degrees] (-180 to 180)",
-                "  terrain_slope    = 0.0                          ! terrain slope [degrees]",
-                "  azimuth          = 0.0                          ! terrain azimuth or aspect [degrees clockwise from north]",
-                "/ \n"
-            ]
-
-            forcing = [
-                "&forcing",
-                "  ZREF               = 10.0                        ! measurement height for wind speed (m)",
-                "  rain_snow_thresh   = 1.0                         ! rain-snow temperature threshold (degrees Celcius)",
-                "/ \n"
-            ]
-
-            model_opt = [
-                "&model_options                                   ! see OptionsType.f90 for details",
-                "  precip_phase_option               = 1",
-                "  snow_albedo_option                = 1",
-                "  dynamic_veg_option                = 4",
-                "  runoff_option                     = 3",
-                "  drainage_option                   = 8",
-                "  frozen_soil_option                = 1",
-                "  dynamic_vic_option                = 1",
-                "  radiative_transfer_option         = 3",
-                "  sfc_drag_coeff_option             = 1",
-                "  canopy_stom_resist_option         = 1",
-                "  crop_model_option                 = 0",
-                "  snowsoil_temp_time_option         = 3",
-                "  soil_temp_boundary_option         = 2",
-                "  supercooled_water_option          = 1",
-                "  stomatal_resistance_option        = 1",
-                "  evap_srfc_resistance_option       = 4",
-                "  subsurface_option                 = 2",
-                "/\n",
-            ]
-
-            struct = [
-                "&structure",
-                f"  isltyp           = {soil_type}               ! soil texture class",
-                "  nsoil            = 4               ! number of soil levels",
-                "  nsnow            = 3               ! number of snow levels",
-                "  nveg             = 27              ! number of vegetation types",
-                f"  vegtyp           = {veg_type}               ! vegetation type",
-                "  croptype         = 0               ! crop type (0 = no crops; this option is currently inactive)",
-                "  sfctyp           = 1               ! land surface type, 1:soil, 2:lake",
-                "  soilcolor       = 4               ! soil color code",
-                "/\n"
-            ]
-
-            init_val = [
-                "&initial_values",
-                "  dzsnso    =  0.0,  0.0,  0.0,  0.1,  0.3,  0.6,  1.0     ! level thickness [m]",
-                "  sice      =  0.0,  0.0,  0.0,  0.0                       ! initial soil ice profile [m3/m3]",
-                "  sh2o      =  0.3,  0.3,  0.3,  0.3                       ! initial soil liquid profile [m3/m3]",
-                "  zwt       =  -2.0                                        ! initial water table depth below surface [m]",
-                "/\n",
-            ]
-
-            nom_params = timing + params + location + forcing + model_opt + struct + init_val
-
-            fname_nom = f'nom_config_{cat_name}.input'
+            fname_nom = f'noahowp_config_{cat_name}.input'
             nom_file = os.path.join(nom_dir, fname_nom)
-            with open(nom_file, "w") as f:
-                f.writelines('\n'.join(nom_params))
+
+            with open(nom_file, 'w') as file:
+                for line in lines:
+                    if line.strip().startswith('startdate'):
+                        file.write(f'  startdate      = \"{start_time}\"  \n')
+                    elif line.strip().startswith('enddate'):
+                        file.write(f'  enddate      = \"{end_time}\"  \n')
+                    elif line.strip().startswith('forcing_filename'):
+                        file.write(f'  forcing_filename   = \"{self.forcing_dir}\"  \n')
+                    elif line.strip().startswith('output_filename'):
+                        file.write(f'  output_filename   = \"output-{cat_name}.csv\"  \n')
+                    elif line.strip().startswith('parameter_dir'):
+                        file.write(f'  parameter_dir      = \"{os.path.join(nom_dir, "parameters")}\" \n')
+                    elif line.strip().startswith('lat'):
+                        file.write(f'  lat      = {centroid_y} \n')
+                    elif line.strip().startswith('lon'):
+                        file.write(f'  lon      = {centroid_x} \n')
+                    elif line.strip().startswith('terrain_slope'):
+                        file.write(f'  terrain_slope      = {slope_deg} \n')
+                    elif line.strip().startswith('azimuth'):
+                        file.write(f'  azimuth       = {aspect} \n')
+                    elif line.strip().startswith('isltyp'):
+                        file.write(f'  isltyp           = {soil_type} \n')
+                    elif line.strip().startswith('vegtyp'):
+                        file.write(f'  vegtyp        = {veg_type} \n')
+                    else:
+                        file.write(line)
 
         
     def write_cfe_input_files(self):

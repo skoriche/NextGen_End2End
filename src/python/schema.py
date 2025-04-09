@@ -62,10 +62,13 @@ def get_schema_model_attributes(gdf_model):
             if 'slope_mean' == d or 'mean.slope' == d:
                 df['slope_mean'] = d
             elif 'slope' == d or 'mean.slope_1km' == d:
-                df['soil_slope'] = d
+                df['slope_1km'] = d
 
         if 'elevation' in d:
             df['elevation_mean'] = d
+
+        if 'circ_mean.aspect' in d:
+            df['aspect_mean'] = d
 
         if 'twi'in d:
             if 'twi_dist' in d:

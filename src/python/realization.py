@@ -124,7 +124,7 @@ class RealizationGenerator:
                 "model_type_name": "NoahOWP",
                 "main_output_variable": "QINSUR",
                 "library_file": self.lib_files['noah-owp-modular'],
-                "init_config": os.path.join(self.config_dir, 'nom/nom_config_{{id}}.input'),
+                "init_config": os.path.join(self.config_dir, 'noahowp/noahowp_config_{{id}}.input'),
                 "allow_exceed_end_time": True,
                 "fixed_time_step": False,
                 "uses_forcing_file": False,
