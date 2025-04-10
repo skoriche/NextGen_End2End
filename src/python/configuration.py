@@ -141,15 +141,10 @@ class ConfigurationGenerator:
             gdf['twi'] = gdf_soil[params['twi']]
             gdf['width_dist'] = gdf_soil[params['width_dist']]
 
-        if "CFE" in self.formulation:
-            if self.surface_runoff_scheme == "GIUH" or self.surface_runoff_scheme == 1:
-                gdf['giuh'] = gdf_soil[params['giuh']]
-            elif self.surface_runoff_scheme == "NASH_CASCADE" or self.surface_runoff_scheme == 2:
-                gdf['N_nash_surface'] = gdf_soil[params['N_nash_surface']]
-                gdf['K_nash_surface'] = gdf_soil[params['K_nash_surface']]
 
-        if "LASAM" in self.formulation:
-            gdf['giuh'] = gdf_soil[params['giuh']]
+        gdf['giuh'] = gdf_soil[params['giuh']]
+        gdf['N_nash_surface'] = gdf_soil[params['N_nash_surface']]
+        gdf['K_nash_surface'] = gdf_soil[params['K_nash_surface']]
         
         df_cats = gpd.read_file(self.gpkg_file, layer='divides')
         catids = [int(re.findall('[0-9]+', s)[0]) for s in df_cats['divide_id']]
@@ -167,7 +162,7 @@ class ConfigurationGenerator:
         nom_basefile = os.path.join(self.workflow_dir, "configs/basefiles/config_noahowp.input")
 
         if not os.path.exists(nom_basefile):
-            sys.exit(f"Sample NoahOWP file does not exist, provided is {nom_basefile}")
+            sys.exit(f"Sample NoahOWP config file does not exist, provided is {nom_basefile}")
 
         # Read infile line by line
         with open(nom_basefile, 'r') as infile:
@@ -216,87 +211,100 @@ class ConfigurationGenerator:
                     else:
                         file.write(line)
 
-        
+
     def write_cfe_input_files(self):
 
         cfe_dir = os.path.join(self.output_dir, "configs/cfe")
         self.create_directory(cfe_dir)
 
-        with open(os.path.join(self.workflow_dir, "configs/basefiles", "custom.yaml"), 'r') as file:
-            dcfe = yaml.safe_load(file)['models']['CFE']
+        cfe_basefile = os.path.join(self.workflow_dir, "configs/basefiles/config_cfe.txt")
 
-        surface_runoff_scheme = dcfe['surface_runoff_scheme']
-        surface_water_partitioning_scheme = dcfe['surface_water_partitioning_scheme']
-        sft_coupled = dcfe['sft_coupled']
-            
-        urban_decimal_fraction = 0.0
+        if not os.path.exists(cfe_basefile):
+            sys.exit(f"Sample CFE config file does not exist, provided is {cfe_basefile}")
+
         delimiter = ","
+        
+        # Read infile line by line
+        with open(cfe_basefile, 'r') as infile:
+            lines = infile.readlines()
 
         for catID in self.catids:
             cat_name = 'cat-' + str(catID)
             fname = cat_name + '*.txt'
 
-            cfe_params = [
-                'forcing_file=BMI',
-                f'surface_water_partitioning_scheme={surface_water_partitioning_scheme}',
-                f'surface_runoff_scheme={surface_runoff_scheme}',
-                'soil_params.depth=2.0[m]',
-                f'soil_params.b={self.gdf["soil_b"][cat_name]}[]',
-                f'soil_params.satdk={self.gdf["soil_satdk"][cat_name]}[m s-1]',
-                f'soil_params.satpsi={self.gdf["soil_satpsi"][cat_name]}[m]',
-                f'soil_params.slop={self.gdf["soil_slop"][cat_name]}[m/m]',
-                f'soil_params.smcmax={self.gdf["soil_smcmax"][cat_name]}[m/m]',
-                f'soil_params.wltsmc={self.gdf["soil_wltsmc"][cat_name]}[m/m]',
-                'soil_params.expon=1.0[]',
-                'soil_params.expon_secondary=1.0[]',
-                f'refkdt={self.gdf["soil_refkdt"][cat_name]}',
-                f'max_gw_storage={self.gdf["max_gw_storage"][cat_name]}[m]',
-                f'Cgw={self.gdf["Cgw"][cat_name]}[m h-1]',
-                f'expon={self.gdf["gw_expon"][cat_name]}[]',
-                'gw_storage=0.5[m/m]',
-                'alpha_fc=0.33',
-                f'soil_storage={self.gdf["soil_smcmax"][cat_name]}[m/m]',
-                'K_nash_subsurface=0.03[]',
-                'N_nash_subsurface=2',
-                'K_lf=0.01[]',
-                'nash_storage_subsurface=0.0,0.0',
-                'num_timesteps=1',
-                'verbosity=0'
-            ]
-
-            if self.gdf['soil_b'][cat_name] == 1.0:
-                cfe_params[4] = 1.1
-
-            if surface_runoff_scheme == "GIUH" or surface_runoff_scheme == 1:
-                giuh_cat = json.loads(self.gdf['giuh'][cat_name])
-                giuh_cat = pd.DataFrame(giuh_cat, columns=['v', 'frequency'])
-                giuh_ordinates = ",".join(str(x) for x in np.array(giuh_cat["frequency"]))
-                cfe_params.append(f'giuh_ordinates={giuh_ordinates}')
-            elif surface_runoff_scheme == "NASH_CASCADE" or surface_runoff_scheme == 2:
-                cfe_params[2] = 'surface_runoff_scheme=NASH_CASCADE'
-                cfe_params.append(f'N_nash_surface={int(self.gdf["N_nash_surface"][cat_name])}[]')
-                cfe_params.append(f'K_nash_surface={self.gdf["K_nash_surface"][cat_name]}[h-1]')
-                s = [str(0.0),] * int(self.gdf['N_nash_surface'][cat_name])
-                s = delimiter.join(s)
-                cfe_params.append(f'nash_storage_surface={s}[]')
-
-            if surface_water_partitioning_scheme == 'Xinanjiang':
-                cfe_params[1] = 'surface_water_partitioning_scheme=Xinanjiang'
-                soil_id = self.gdf['ISLTYP'][cat_name]
-                cfe_params.append(f'a_Xinanjiang_inflection_point_parameter={self.soil_class_NWM["AXAJ"][soil_id]}')
-                cfe_params.append(f'b_Xinanjiang_shape_parameter={self.soil_class_NWM["BXAJ"][soil_id]}')
-                cfe_params.append(f'x_Xinanjiang_shape_parameter={self.soil_class_NWM["XXAJ"][soil_id]}')
-                cfe_params.append(f'urban_decimal_fraction={urban_decimal_fraction}')
-
-            if sft_coupled.lower() == "true":
-                ice_content_threshold = 0.3
-                cfe_params.append("sft_coupled=true")
-                cfe_params.append(f"ice_content_threshold={ice_content_threshold}")
-
             fname_cfe = f'cfe_config_{cat_name}.txt'
             cfe_file = os.path.join(cfe_dir, fname_cfe)
-            with open(cfe_file, "w") as f:
-                f.writelines('\n'.join(cfe_params))
+
+            with open(cfe_file, 'w') as file:
+                for line in lines:
+                    if line.startswith("#"):
+                        continue
+                    if line.strip().startswith('soil_params.b'):
+                        if self.gdf['soil_b'][cat_name] == 1.0:
+                            file.write(f'soil_params.b=1.1[]\n')
+                        else:
+                            file.write(f'soil_params.b={self.gdf["soil_b"][cat_name]}[]\n')
+                    elif line.strip().startswith('soil_params.satdk'):
+                        file.write(f'soil_params.satdk={self.gdf["soil_satdk"][cat_name]}[m s-1]\n')
+                    elif line.strip().startswith('soil_params.satpsi'):
+                        file.write(f'soil_params.satpsi={self.gdf["soil_satpsi"][cat_name]}[m]\n')
+                    elif line.strip().startswith('soil_params.slop'):
+                        file.write(f'soil_params.slop={self.gdf["soil_slop"][cat_name]}[m/m]\n')
+                    elif line.strip().startswith('soil_params.smcmax'):
+                        file.write(f'soil_params.smcmax={self.gdf["soil_smcmax"][cat_name]}[m/m]\n')
+                    elif line.strip().startswith('soil_params.wltsmc'):
+                        file.write(f'soil_params.wltsmc={self.gdf["soil_wltsmc"][cat_name]}[m/m]\n')
+                    elif line.strip().startswith('soil_params.refkdt'):
+                        file.write(f'refkdt={self.gdf["soil_refkdt"][cat_name]}\n')
+                    elif line.strip().startswith('max_gw_storage'):
+                        file.write(f'max_gw_storage={self.gdf["max_gw_storage"][cat_name]}[m]\n')
+                    elif line.strip().startswith('Cgw'):
+                        file.write(f'Cgw={self.gdf["Cgw"][cat_name]}[m h-1]\n')
+                    elif line.strip().startswith('expon'):
+                        file.write(f'expon={self.gdf["gw_expon"][cat_name]}[]\n')
+                    #elif line.strip().startswith('soil_storage'):
+                    #    file.write(f'soil_storage={self.gdf["soil_smcmax"][cat_name]}[m/m]\n')
+                    elif line.strip().startswith('surface_runoff_scheme'):
+                        surface_runoff_scheme = line.strip().split("=")[1]
+                        file.write(line)
+
+                        if surface_runoff_scheme == "GIUH" or surface_runoff_scheme == 1:
+                            giuh_cat = json.loads(self.gdf['giuh'][cat_name])
+                            giuh_cat = pd.DataFrame(giuh_cat, columns=['v', 'frequency'])
+                            giuh_ordinates = ",".join(str(x) for x in np.array(giuh_cat["frequency"]))
+                            file.write(f'giuh_ordinates={giuh_ordinates}\n')
+                        elif surface_runoff_scheme == "NASH_CASCADE" or surface_runoff_scheme == 2:
+                            file.write(f'N_nash_surface={int(self.gdf["N_nash_surface"][cat_name])}[]\n')
+                            file.write(f'K_nash_surface={self.gdf["K_nash_surface"][cat_name]}[h-1]\n')
+                            s = [str(0.0),] * int(self.gdf['N_nash_surface'][cat_name])
+                            s = delimiter.join(s)
+                            file.write(f'nash_storage_surface={s}[]\n')
+                    elif line.strip().startswith('N_nash_surface') or line.strip().startswith('K_nash_surface') or \
+                         line.strip().startswith('nash_storage_surface'):
+                        continue
+                    elif line.strip().startswith('surface_water_partitioning_scheme'):
+                        surface_water_partitioning_scheme = line.strip().split("=")[1]
+                        file.write(line)
+
+                        if (surface_water_partitioning_scheme == "Xinanjiang"):
+                            soil_id = self.gdf['ISLTYP'][cat_name]
+                            file.write
+                            file.write(f'a_Xinanjiang_inflection_point_parameter={self.soil_class_NWM["AXAJ"][soil_id]}\n')
+                            file.write(f'b_Xinanjiang_shape_parameter={self.soil_class_NWM["BXAJ"][soil_id]}\n')
+                            file.write(f'x_Xinanjiang_shape_parameter={self.soil_class_NWM["XXAJ"][soil_id]}\n')
+                    elif line.strip().startswith('a_Xinanjiang_inflection_point_parameter') or \
+                         line.strip().startswith('b_Xinanjiang_shape_parameter') or \
+                         line.strip().startswith('x_Xinanjiang_shape_parameter'):
+                        continue
+                    elif line.strip().startswith('sft_coupled'):
+                        sft_coupled = line.strip().split("=")[1]
+                        if sft_coupled.lower() == "true":
+                            ice_content_threshold = 0.3
+                            file.write("sft_coupled=true")
+                            file.write(f"ice_content_threshold={ice_content_threshold}")
+                    else:
+                        file.write(line)
+
 
     def write_topmodel_input_files(self):
 
