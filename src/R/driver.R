@@ -270,6 +270,8 @@ ProcessGPKG <- function(gfile, failed_dir) {
 }
 
 ############################# RUN_DRIVER ######################################
+# choose the right “attributes” layer name
+attr_layer <- if (hf_version == "2.2") "divide-attributes" else "model-attributes"
 # main runner function
 RunDriver <- function(gage_id = NULL, 
                       is_gpkg_provided = FALSE, 
@@ -317,7 +319,7 @@ RunDriver <- function(gage_id = NULL,
       if (compute_divide_attributes) {
           layers = c("divides", "flowpaths", "network", "nexus")
       }
-
+print("before sub-set")
       hfsubsetR::get_subset(hl_uri = glue("gages-{gage_id}"),
                             outfile = outfile,
                             gpkg = hf_gpkg,
@@ -325,6 +327,7 @@ RunDriver <- function(gage_id = NULL,
                             lyrs = layers,
                             type = 'nextgen',
                             overwrite = TRUE)
+print("after sub-set")
     } else if (hf_version == "2.1.1") {
       layers = c("divides", "flowlines", "network", "nexus",
                  "flowpath-attributes","model-attributes")
@@ -347,13 +350,23 @@ RunDriver <- function(gage_id = NULL,
     outfile <- loc_gpkg_file
     }
 
-  # check if the divide-attributes layer has the same number of rows as the divides layer
+  # # check if the divide-attributes layer has the same number of rows as the divides layer
+  # if (!compute_divide_attributes) {
+  #   check_divs <- st_read(outfile, layer = 'divides')
+  #   check_attrs <- st_read(outfile, layer = 'divide-attributes')
+  #   if (!nrow(check_divs) == nrow(check_attrs)) {
+  #     print(glue("DIVIDES HAS {nrow(check_divs)} ROWS BUT DIVIDE-ATTRIBUTES HAS {nrow(check_attrs)}!!"))
+  #     stop()
+  #   }
+  # }
+
   if (!compute_divide_attributes) {
-    check_divs <- st_read(outfile, layer = 'divides')
-    check_attrs <- st_read(outfile, layer = 'divide-attributes')
-    if (!nrow(check_divs) == nrow(check_attrs)) {
-      print(glue("DIVIDES HAS {nrow(check_divs)} ROWS BUT DIVIDE-ATTRIBUTES HAS {nrow(check_attrs)}!!"))
-      stop()
+    check_divs  <- sf::st_read(outfile, layer = "divides")
+    check_attrs <- sf::st_read(outfile, layer = attr_layer)
+    if (nrow(check_divs) != nrow(check_attrs)) {
+      stop(glue::glue(
+        "DIVIDES has {nrow(check_divs)} rows, but {attr_layer} has {nrow(check_attrs)}"
+      ))
     }
   }
  
@@ -385,7 +398,8 @@ RunDriver <- function(gage_id = NULL,
      time.taken <- as.numeric(Sys.time() - start.time, units = "secs") #end.time - start.time
      print (paste0("Time (model attrs) = ", time.taken))
    } else {
-     d_attr <- read_sf(outfile, 'divide-attributes')
+#     d_attr <- read_sf(outfile, 'divide-attributes')
+     d_attr <- sf::st_read(outfile, layer = attr_layer)
    }
 
   #if (hf_version == "2.2") {
